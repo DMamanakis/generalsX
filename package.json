@@ -56,6 +56,7 @@
       "!src/theme.js",
       "!src/config.js",
       "!src/config.template.js",
+      "!src/client/**",
       "!src/components/**",
       "!src/pages/**",
       "!src/services/**"
