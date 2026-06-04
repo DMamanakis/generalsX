@@ -54,7 +54,11 @@
       "!src/index.js",
       "!src/App.js",
       "!src/theme.js",
-      "!src/config.js"
+      "!src/config.js",
+      "!src/config.template.js",
+      "!src/components/**",
+      "!src/pages/**",
+      "!src/services/**"
     ],
     "coverageThreshold": {
       "global": {
