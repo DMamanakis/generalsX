@@ -1,0 +1,68 @@
+{
+  "name": "generals-x",
+  "version": "0.1.0",
+  "description": "A composable strategy framework for bot.generals.io bots",
+  "main": "index.html",
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run lint && npm run test:ci"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx}": ["eslint --cache --fix"]
+  },
+  "dependencies": {
+    "grommet": "^2",
+    "react": "^16",
+    "react-dom": "^16",
+    "react-router-dom": "^5",
+    "react-scripts": "^3",
+    "socket.io-client": "^2",
+    "styled-components": "^4"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7",
+    "@babel/eslint-plugin": "^7",
+    "@babel/plugin-syntax-jsx": "^7",
+    "eslint": "^7",
+    "eslint-config-prettier": "^8",
+    "eslint-plugin-bestpractices": "git+https://github.com/skye2k2/eslint-plugin-bestpractices.git",
+    "eslint-plugin-jsdoc": "^36",
+    "eslint-plugin-prettier": "^4",
+    "eslint-plugin-sonarjs": "^0.10",
+    "husky": "~3.1",
+    "lint-staged": "^11"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "lint": "eslint --cache '**/*.+(js|jsx)'",
+    "lint:noprettier": "eslint --cache --rule 'prettier/prettier: [0]' '**/*.+(js|jsx)'",
+    "lint:fix": "eslint --cache --fix '**/*.+(js|jsx)'",
+    "test": "react-scripts test",
+    "test:ci": "CI=true npm test -- --silent --colors --coverage"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/**/*test*.*",
+      "!src/index.js",
+      "!src/App.js",
+      "!src/theme.js",
+      "!src/config.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 30,
+        "functions": 40,
+        "lines": 40,
+        "statements": 40
+      }
+    }
+  }
+}
