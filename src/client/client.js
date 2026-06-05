@@ -187,7 +187,8 @@ export function onUpdate(updateData) {
       for (let i = landSetsOfFifty; i > 0; i--) {
         gatherableArmies -= 50 * i
       }
-      gatherableArmies = (score.tiles % 50) * (landSetsOfFifty + 1)
+      gatherableArmies -= (score.tiles % 50) * (landSetsOfFifty + 1)
+      gatherableArmies = Math.max(0, gatherableArmies)
 
       game.opponents[score.i] = {
         idx: score.i,
