@@ -6,6 +6,7 @@ import config from '../config'
 import { patch } from './patch'
 import { createGameState } from './gameState'
 import { getVoiceLine } from './voiceLines'
+import { makeLocationObject } from '../core/locationObject'
 
 let forceStartFlag = false
 let game = {}
@@ -34,10 +35,6 @@ const COLOR_MAP = [
   'BLUE',
   'LAVENDER',
 ]
-
-const TERRAIN_EMPTY = -1
-const TERRAIN_MTN = -2
-const TERRAIN_FOG = -3
 
 /**
  * Append a line to the on-screen game log.
@@ -136,25 +133,6 @@ export function onStart(startData) {
   }
 }
 
-function makeLocationObject(locationIdx) {
-  const terrain = game.terrain[locationIdx]
-  const isTeam = game.teams ? game.teams[terrain] === game.team : false
-  const loc = {
-    idx: locationIdx,
-    armies: game.armies[locationIdx],
-    terrain,
-    isMine: terrain === game.playerIndex,
-    isTeam,
-    attackable: terrain === TERRAIN_EMPTY || (terrain > TERRAIN_EMPTY && terrain !== game.playerIndex && !isTeam),
-    isCity: game.knownCities.includes(locationIdx),
-    isGeneral: game.opponents.some(
-      opp => opp && opp !== -1 && opp.generalLocationIndex === locationIdx && !opp.dead
-    ),
-  }
-  game.locations[locationIdx] = loc
-  return loc
-}
-
 export function onUpdate(updateData) {
   game.map = patch(game.map, updateData.map_diff)
   game.cities = patch(game.cities, updateData.cities_diff)
@@ -228,7 +206,9 @@ export function onUpdate(updateData) {
     game.locationObjectMap[row] = []
     for (let col = 0; col <= (game.terrain.length - 1) % game.mapWidth; col++) {
       const idx = row * game.mapWidth + col
-      game.locationObjectMap[row][col] = makeLocationObject(idx)
+      const loc = makeLocationObject(idx, game)
+      game.locations[idx] = loc
+      game.locationObjectMap[row][col] = loc
     }
   }
 
@@ -255,6 +235,4 @@ function onWin() {
   Quit()
 }
 
-// Unused terrain constants kept for reference
-void TERRAIN_MTN
-void TERRAIN_FOG
+
