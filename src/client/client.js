@@ -159,9 +159,8 @@ export function onUpdate(updateData) {
   game.map = patch(game.map, updateData.map_diff)
   game.cities = patch(game.cities, updateData.cities_diff)
   game.myGeneralLocationIndex = updateData.generals[game.playerIndex]
-  game.generals[game.playerIndex] = -1
 
-  // Track discovered general locations permanently
+  // Track discovered general locations permanently (own general included)
   for (let idx = 0; idx < updateData.generals.length; idx++) {
     const loc = updateData.generals[idx]
     if (loc > -1 && (!game.generals || game.generals[idx] !== -1)) {
