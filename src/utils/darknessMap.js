@@ -1,4 +1,4 @@
-import { TERRAIN_MTN } from '../core/constants'
+import { TERRAIN_EMPTY } from '../core/constants'
 import { findNeighbors } from './neighbors'
 
 /**
@@ -14,8 +14,9 @@ export function createDarknessMap(game) {
   const darknessMap = []
   const queue = []
 
-  // Seed all currently-visible tiles (terrain >= TERRAIN_MTN means visible)
-  const visible = game.locations.filter(loc => loc.terrain >= TERRAIN_MTN)
+  // Seed traversable visible tiles (terrain >= TERRAIN_EMPTY excludes mountains,
+  // fog, and fogged mountains, which are impassable or not yet seen)
+  const visible = game.locations.filter(loc => loc.terrain >= TERRAIN_EMPTY)
   for (let v = 0; v < visible.length; v++) {
     darknessMap[visible[v].idx] = 0
     queue.push(visible[v])
