@@ -50,9 +50,10 @@ export function createDistanceMap({location, game, noCities}) {
 }
 
 /**
- * Recursively follow the distance map from target back to source,
- * building a path array (index 0 = target, last index = source).
+ * Follow the distance map from target back to source, building a path array.
+ * Path index 0 = target, last index = source.
  * Ties broken by army differential in favor of better attack positions.
+ * Iterative — safe on arbitrarily large maps.
  * @param {object} params
  * @param {Array} params.distanceMap - BFS distance map from source
  * @param {object|Array} params.targetLocationOrPath - Target location or in-progress path
@@ -63,67 +64,47 @@ export function findShortestPath({distanceMap, targetLocationOrPath, game}) {
   if (!game) {
     throw new Error('findShortestPath requires game context')
   }
-  let path = []
-  if (Array.isArray(targetLocationOrPath)) {
-    path = targetLocationOrPath
-  } else {
-    path.push(targetLocationOrPath)
-  }
 
-  const lastInPath = path[path.length - 1]
-  const neighbors = findNeighbors({location: lastInPath, game})
-  let chosenPath = lastInPath
-  let reachable = false
+  const path = Array.isArray(targetLocationOrPath)
+    ? targetLocationOrPath
+    : [targetLocationOrPath]
 
-  for (let i = 0; i < neighbors.length; i++) {
-    const n = neighbors[i]
-    if (distanceMap[n.idx] !== undefined &&
-        distanceMap[n.idx] !== 'C' &&
-        distanceMap[n.idx] !== 'M' &&
-        distanceMap[chosenPath.idx] !== undefined &&
-        distanceMap[chosenPath.idx] !== 'C' &&
-        distanceMap[chosenPath.idx] !== 'M') {
-      reachable = true
-      break
-    }
-  }
+  while (true) {
+    const current = path[path.length - 1]
+    const neighbors = findNeighbors({location: current, game})
+    const currentDist = distanceMap[current.idx]
 
-  if (reachable) {
-    for (let i = 0; i < neighbors.length; i++) {
-      const candidate = neighbors[i]
-      const candidateDist = distanceMap[candidate.idx]
-      const chosenDist = distanceMap[chosenPath.idx]
+    // Reachable = current node has a numeric distance AND at least one neighbor does too
+    const isReachable = typeof currentDist === 'number' &&
+      neighbors.some(n => typeof distanceMap[n.idx] === 'number')
 
-      if (typeof candidateDist === 'number' && typeof chosenDist === 'number' && candidateDist < chosenDist) {
-        chosenPath = candidate
-      } else if (candidateDist === chosenDist &&
-          getArmyAttackDiff(lastInPath, candidate, game) > getArmyAttackDiff(lastInPath, chosenPath, game)) {
-        chosenPath = candidate
+    let chosen = current
+
+    if (isReachable) {
+      for (let i = 0; i < neighbors.length; i++) {
+        const candidate = neighbors[i]
+        const candidateDist = distanceMap[candidate.idx]
+        const chosenDist = distanceMap[chosen.idx]
+
+        if (typeof candidateDist === 'number' && typeof chosenDist === 'number' && candidateDist < chosenDist) {
+          chosen = candidate
+        } else if (candidateDist === chosenDist &&
+            getArmyAttackDiff(current, candidate, game) > getArmyAttackDiff(current, chosen, game)) {
+          chosen = candidate
+        }
+      }
+    } else {
+      // Fallback for blocked/unreachable positions: step to any unvisited neighbor
+      for (let i = 0; i < neighbors.length; i++) {
+        if (!path.includes(neighbors[i])) {
+          chosen = neighbors[i]
+          break
+        }
       }
     }
-  } else {
-    // Bug fix: original pathContains() never returned value — fixed here
-    function pathContains(loc) {
-      for (let i = 0; i < path.length; i++) {
-        if (path[i] === loc) return true
-      }
-      return false
-    }
 
-    if (neighbors[0] && !pathContains(neighbors[0])) {
-      chosenPath = neighbors[0]
-    } else if (neighbors[1] && !pathContains(neighbors[1])) {
-      chosenPath = neighbors[1]
-    } else if (neighbors[2] && !pathContains(neighbors[2])) {
-      chosenPath = neighbors[2]
-    } else if (neighbors[3] && !pathContains(neighbors[3])) {
-      chosenPath = neighbors[3]
-    }
-  }
-
-  if (chosenPath !== lastInPath) {
-    path.push(chosenPath)
-    path = findShortestPath({distanceMap, targetLocationOrPath: path, game})
+    if (chosen === current) break  // No progress — path is complete or stuck
+    path.push(chosen)
   }
 
   return path
