@@ -1,8 +1,16 @@
 /**
  * Base class for all bot strategies.
- * Strategies are stateless — they receive game + intel and return move lists.
+ * Accepts an optional config object passed through to subclasses via this.config.
+ * Subclasses define their own defaults by merging: { ...defaults, ...config }.
  */
 export class BaseStrategy {
+  /**
+   * @param {object} [config={}] - Strategy-specific configuration options
+   */
+  constructor(config = {}) {
+    this.config = config
+  }
+
   /**
    * Evaluate whether this strategy has any viable moves.
    * @param {object} game - Current game state
