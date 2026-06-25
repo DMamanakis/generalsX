@@ -1,7 +1,9 @@
 export const PRIORITY = {
   MURDER: 100,
   DEFEND: 50,
+  REINFORCE: 40, // send troops to teammate
   CAPTURE: 20,
+  HANDOFF: 15,   // capture neutral tile and push it to teammate
   EXPAND: 10,
   CREEP: 5,
   EXPLORE: 1,

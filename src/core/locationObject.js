@@ -8,7 +8,10 @@ import { TERRAIN_EMPTY } from './constants'
  */
 export function makeLocationObject(locationIdx, game) {
   const terrain = game.terrain[locationIdx]
-  const isTeam = game.teams ? game.teams[terrain] === game.team : false
+  // isTeam: tile belongs to a teammate — same team but NOT the current player's own tile
+  const isTeam = game.teams
+    ? game.teams[terrain] === game.team && terrain !== game.playerIndex
+    : false
   return {
     idx: locationIdx,
     armies: game.armies[locationIdx],
