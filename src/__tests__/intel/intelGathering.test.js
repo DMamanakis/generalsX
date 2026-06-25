@@ -51,4 +51,19 @@ describe('gatherIntel', () => {
     expect(intel.foggedTerritories.length).toBeGreaterThan(0)
     intel.foggedTerritories.forEach(loc => expect(loc.terrain).toBe(-3))
   })
+
+  it('should include threats array in returned intel', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    const intel = gatherIntel(game)
+    expect(Array.isArray(intel.threats)).toBe(true)
+  })
+
+  it('should detect a threat when an enemy is adjacent to our general', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    // General is at index 6; place an enemy at index 7 (adjacent)
+    game.terrain[7] = 0
+    game.armies[7] = 5
+    const intel = gatherIntel(game)
+    expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL')).toBe(true)
+  })
 })

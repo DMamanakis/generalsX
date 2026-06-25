@@ -1,5 +1,6 @@
 import { TERRAIN_EMPTY, TERRAIN_FOG } from '../core/constants'
 import { buildGameMap } from '../core/gameMap'
+import { detectThreats } from './threatDetection'
 
 const USEFUL_ARMY_BASE = 2
 const MID_GAME_TURN_THRESHOLD = 200
@@ -78,5 +79,6 @@ function parseMap(game, prevIntel) {
     visibleOpponentTerritories,
     myArmies: allMyArmies,
     myTopArmies,
+    threats: detectThreats(game),
   }
 }
