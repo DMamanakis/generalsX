@@ -2,6 +2,7 @@ import MurderBot from '../bots/murderBot'
 import EnigmaBot from '../bots/enigmaBot'
 import FinderBot from '../bots/finderBot'
 import TurtleBot from '../bots/turtleBot'
+import GiverBot from '../bots/giverBot'
 import config from '../config'
 import { patch } from './patch'
 import { createGameState } from './gameState'
@@ -18,6 +19,7 @@ export const BOT_MAP = {
   EnigmaBot,
   FinderBot,
   TurtleBot,
+  GiverBot,
 }
 
 const COLOR_MAP = [
