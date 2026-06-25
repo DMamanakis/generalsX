@@ -6,7 +6,7 @@ import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * EXPLORE strategy: move the largest army toward the darkest (most unexplored) area.
- * Only fires during EXPLORE and EXPAND — once the game is decided (MURDER/DEFEND)
+ * Only fires during EXPLORE and EXPAND — once the game is decided (MDK/DEFEND)
  * sending armies into fog wastes momentum.
  */
 export class ExploreStrategy extends BaseStrategy {

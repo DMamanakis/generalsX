@@ -12,7 +12,7 @@ const config = {
   // Bot 2
   BOT_USER_ID_2: 'your-second-bot-user-id',
   BOT_NAME_2: 'GeneralsX-2',
-  BOT_VARIANT_2: 'MurderBot',
+  BOT_VARIANT_2: 'MdkBot',
 }
 
 export default config

@@ -14,10 +14,10 @@ describe('makeAttackQueueObject', () => {
 
   it('should extract idx from location objects', () => {
     const obj = makeAttackQueueObject({
-      mode: 'MURDER',
+      mode: 'MDK',
       attacker: {idx: 10, armies: 5},
       target: {idx: 15, armies: 2},
-      priority: PRIORITY.MURDER,
+      priority: PRIORITY.MDK,
     })
     expect(obj.attackerIndex).toBe(10)
     expect(obj.targetIndex).toBe(15)

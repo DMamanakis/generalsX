@@ -20,7 +20,7 @@ describe('determineForeignPolicy', () => {
     expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.EXPAND)
   })
 
-  it('should return MURDER when we found a general and are stronger', () => {
+  it('should return MDK when we found a general and are stronger', () => {
     // 'empty' terrain already has opponent (player 0) at index 24
     const game = initializeGameState('empty', 'allArmiesOnGeneral')
     game.turn = 150
@@ -31,7 +31,7 @@ describe('determineForeignPolicy', () => {
 
     // Verify undiscovered=false (opponent at idx 24 makes us discovered)
     expect(intel.undiscovered).toBe(false)
-    expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.MURDER)
+    expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.MDK)
   })
 
   it('should return DEFEND when we found a general and we are weaker', () => {
@@ -44,7 +44,7 @@ describe('determineForeignPolicy', () => {
     expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.DEFEND)
   })
 
-  it('should return EXPAND (not MURDER) when the only known general belongs to a teammate', () => {
+  it('should return EXPAND (not MDK) when the only known general belongs to a teammate', () => {
     const game = initializeGameState('empty', 'allArmiesOnGeneral')
     game.turn = 150
     game.generals = [24]

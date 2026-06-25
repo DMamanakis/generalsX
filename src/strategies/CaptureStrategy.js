@@ -5,7 +5,7 @@ import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * CAPTURE strategy: path to the weakest affordable visible city.
- * Cities compound army growth, so capturing them is worthwhile during EXPAND and MURDER.
+ * Cities compound army growth, so capturing them is worthwhile during EXPAND and MDK.
  * Skips during EXPLORE (too early) and DEFEND (wrong time to roam).
  *
  * Config options:

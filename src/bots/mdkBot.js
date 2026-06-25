@@ -1,17 +1,17 @@
 import { BotFramework } from './botFramework'
-import { MurderStrategy } from '../strategies/MurderStrategy'
+import { MdkStrategy } from '../strategies/MdkStrategy'
 import { ExpandStrategy } from '../strategies/ExpandStrategy'
 import { ExploreStrategy } from '../strategies/ExploreStrategy'
 import { CaptureStrategy } from '../strategies/CaptureStrategy'
 
 /**
- * MurderBot preset: aggressive early expansion, hunts enemy generals.
- * Strategies (priority order): Murder > Capture > Expand > Explore
+ * MdkBot preset: aggressive early expansion, hunts enemy generals.
+ * Strategies (priority order): Mdk > Capture > Expand > Explore
  */
-const murderBot = {
+const mdkBot = {
   init(game) {
     this._framework = new BotFramework([
-      new MurderStrategy(),
+      new MdkStrategy(),
       new CaptureStrategy(),
       new ExpandStrategy(),
       new ExploreStrategy(),
@@ -24,4 +24,4 @@ const murderBot = {
   },
 }
 
-export default murderBot
+export default mdkBot

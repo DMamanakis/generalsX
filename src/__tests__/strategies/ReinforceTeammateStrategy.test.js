@@ -76,7 +76,7 @@ describe('ReinforceTeammateStrategy', () => {
       const game = makeTeamGame({ myArmies: 15 })
       const intel = gatherIntel(game)
       expect(strategy.evaluate(game, intel, 'DEFEND')).toBe(true)
-      expect(strategy.evaluate(game, intel, 'MURDER')).toBe(true)
+      expect(strategy.evaluate(game, intel, 'MDK')).toBe(true)
     })
 
     it('returns false when teammate is dead', () => {

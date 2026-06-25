@@ -1,5 +1,5 @@
 export const PRIORITY = {
-  MURDER: 100,
+  MDK: 100,
   DEFEND: 50,
   REINFORCE: 40, // send troops to teammate
   CAPTURE: 20,

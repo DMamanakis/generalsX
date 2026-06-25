@@ -3,11 +3,11 @@ import { DefendStrategy } from '../strategies/DefendStrategy'
 import { ConsolidateStrategy } from '../strategies/ConsolidateStrategy'
 import { CaptureStrategy } from '../strategies/CaptureStrategy'
 import { ExpandStrategy } from '../strategies/ExpandStrategy'
-import { MurderStrategy } from '../strategies/MurderStrategy'
+import { MdkStrategy } from '../strategies/MdkStrategy'
 
 /**
  * TurtleBot preset: defensive consolidation and fortification.
- * Strategies (priority order): Defend > Consolidate > Capture > Expand > Murder
+ * Strategies (priority order): Defend > Consolidate > Capture > Expand > Mdk
  *
  * Config choices:
  *   - ExpandStrategy minArmySize:8  — only spreads with sizeable armies, not every 2-unit stack
@@ -20,7 +20,7 @@ const turtleBot = {
       new ConsolidateStrategy(),
       new CaptureStrategy({ cityArmyBuffer: 5 }),
       new ExpandStrategy({ minArmySize: 8 }),
-      new MurderStrategy(),
+      new MdkStrategy(),
     ])
     this._framework.init(game)
   },
