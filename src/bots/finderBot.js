@@ -1,18 +1,18 @@
 import { BotFramework } from './botFramework'
 import { ExploreStrategy } from '../strategies/ExploreStrategy'
 import { ExpandStrategy } from '../strategies/ExpandStrategy'
-import { MurderStrategy } from '../strategies/MurderStrategy'
+import { MdkStrategy } from '../strategies/MdkStrategy'
 
 /**
  * FinderBot preset: exploration-focused, prioritizes discovering the map.
- * Strategies (priority order): Explore > Expand > Murder
+ * Strategies (priority order): Explore > Expand > Mdk
  */
 const finderBot = {
   init(game) {
     this._framework = new BotFramework([
       new ExploreStrategy(),
       new ExpandStrategy(),
-      new MurderStrategy(),
+      new MdkStrategy(),
     ])
     this._framework.init(game)
   },

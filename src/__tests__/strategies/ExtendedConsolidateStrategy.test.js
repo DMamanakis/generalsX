@@ -19,7 +19,7 @@ describe('ExtendedConsolidateStrategy', () => {
     it('should return false when policy is not DEFEND', () => {
       const game = initializeGameState('occupiedCorner', 'cornerArmies')
       const intel = gatherIntel(game)
-      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MURDER)).toBe(false)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MDK)).toBe(false)
       expect(strategy.evaluate(game, intel, FOREIGN_POLICY.EXPAND)).toBe(false)
     })
 

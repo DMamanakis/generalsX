@@ -1,6 +1,6 @@
 import { BotFramework } from '../../bots/botFramework'
 import { ExpandStrategy } from '../../strategies/ExpandStrategy'
-import { MurderStrategy } from '../../strategies/MurderStrategy'
+import { MdkStrategy } from '../../strategies/MdkStrategy'
 import { initializeGameState } from '../../testUtils/testHelper'
 
 describe('BotFramework', () => {
@@ -8,7 +8,7 @@ describe('BotFramework', () => {
   let game
 
   beforeEach(() => {
-    framework = new BotFramework([new MurderStrategy(), new ExpandStrategy()])
+    framework = new BotFramework([new MdkStrategy(), new ExpandStrategy()])
     game = initializeGameState('empty', 'allArmiesOnGeneral')
     framework.init(game)
   })
@@ -31,7 +31,7 @@ describe('BotFramework', () => {
     expect(game.socket.emit).toHaveBeenCalledWith('attack', expect.any(Number), expect.any(Number), false)
   })
 
-  it('should use MURDER strategy when general is known', () => {
+  it('should use MDK strategy when general is known', () => {
     game.turn = 50  // Before EARLY_GAME so general counts as top army
     game.generals = [24]
     game.opponents[0] = {dead: false, generalLocationIndex: 24, color: 'RED', total: 5, tiles: 1}

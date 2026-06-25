@@ -3,7 +3,7 @@ const EARLY_GAME_TURN_THRESHOLD = 100
 export const FOREIGN_POLICY = {
   EXPLORE: 'EXPLORE',
   EXPAND: 'EXPAND',
-  MURDER: 'MURDER',
+  MDK: 'MDK',
   DEFEND: 'DEFEND',
   CONSOLIDATE: 'CONSOLIDATE',
   THREATENED: 'THREATENED',
@@ -13,7 +13,7 @@ export const FOREIGN_POLICY = {
  * Determine the overall strategic posture for this turn.
  * EXPLORE  → early game, gather information
  * EXPAND   → undiscovered, grow territory
- * MURDER   → found enemy general and we are stronger
+ * MDK      → found enemy general and we are stronger
  * DEFEND   → found enemy general and we are weaker
  * @param {object} game - Current game state
  * @param {object} intel - Gathered intel from intelGathering
@@ -40,7 +40,7 @@ export function determineForeignPolicy(game, intel) {
       foundGeneral = true
       const opponent = game.opponents[playerIdx]
       if (game.myScore && game.myScore.total >= opponent.total) {
-        policy = FOREIGN_POLICY.MURDER
+        policy = FOREIGN_POLICY.MDK
       } else {
         policy = FOREIGN_POLICY.DEFEND
       }

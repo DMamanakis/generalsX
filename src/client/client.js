@@ -1,4 +1,4 @@
-import MurderBot from '../bots/murderBot'
+import MdkBot from '../bots/mdkBot'
 import EnigmaBot from '../bots/enigmaBot'
 import FinderBot from '../bots/finderBot'
 import TurtleBot from '../bots/turtleBot'
@@ -15,7 +15,7 @@ let gameLog = ''
 let socket
 
 export const BOT_MAP = {
-  MurderBot,
+  MdkBot,
   EnigmaBot,
   FinderBot,
   TurtleBot,
@@ -81,8 +81,8 @@ export function ChooseBotVariant(botVariant) {
     ai = BOT_MAP[botVariant]
     addGameLog(`${botVariant} selected`)
   } else {
-    ai = BOT_MAP.MurderBot
-    addGameLog(`Unrecognized bot variant '${botVariant}'. Defaulting to MurderBot`)
+    ai = BOT_MAP.MdkBot
+    addGameLog(`Unrecognized bot variant '${botVariant}'. Defaulting to MdkBot`)
   }
 }
 

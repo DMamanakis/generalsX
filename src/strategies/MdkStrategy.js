@@ -5,13 +5,13 @@ import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 import { getOpponentWithKnownGeneral } from '../intel/opponentAnalysis'
 
 /**
- * MURDER strategy: send the largest army on a path to the weakest known enemy general.
+ * MDK strategy: send the largest army on a path to the weakest known enemy general.
  * Target selection uses opponentAnalysis to prefer the most vulnerable opponent
  * rather than always targeting by player index order.
  * Only fires when foreign policy is not DEFEND (i.e. we are not outmatched).
  * Teammate generals are excluded by opponentAnalysis.
  */
-export class MurderStrategy extends BaseStrategy {
+export class MdkStrategy extends BaseStrategy {
   evaluate(game, intel, foreignPolicy) {
     if (foreignPolicy === FOREIGN_POLICY.DEFEND) return false
     if (!intel.myTopArmies.length) return false
@@ -31,10 +31,10 @@ export class MurderStrategy extends BaseStrategy {
 
     for (let i = path.length - 1; i > 0; i--) {
       const move = makeAttackQueueObject({
-        mode: 'MURDER',
+        mode: 'MDK',
         attacker: path[i],
         target: path[i - 1],
-        priority: PRIORITY.MURDER,
+        priority: PRIORITY.MDK,
       })
       if (move) queue.push(move)
     }

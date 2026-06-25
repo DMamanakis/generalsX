@@ -1,13 +1,13 @@
-import { MurderStrategy } from '../../strategies/MurderStrategy'
+import { MdkStrategy } from '../../strategies/MdkStrategy'
 import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
 
-describe('MurderStrategy', () => {
+describe('MdkStrategy', () => {
   let strategy
 
   beforeEach(() => {
-    strategy = new MurderStrategy()
+    strategy = new MdkStrategy()
   })
 
   describe('evaluate()', () => {
@@ -16,14 +16,14 @@ describe('MurderStrategy', () => {
       game.generals = []
       game.opponents = []
       const intel = gatherIntel(game)
-      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MURDER)).toBe(false)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MDK)).toBe(false)
     })
 
-    it('should return true when enemy general is known and policy is MURDER', () => {
+    it('should return true when enemy general is known and policy is MDK', () => {
       const game = initializeGameState('empty', 'allArmiesOnGeneral')
       game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 10, tiles: 1}
       const intel = gatherIntel(game)
-      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MURDER)).toBe(true)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MDK)).toBe(true)
     })
 
     it('should return false when policy is DEFEND', () => {
@@ -39,7 +39,7 @@ describe('MurderStrategy', () => {
       game.teams = [1, 1]
       game.team = 1
       const intel = gatherIntel(game)
-      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MURDER)).toBe(false)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MDK)).toBe(false)
     })
 
     it('should target the weakest opponent when multiple generals are known', () => {
@@ -57,7 +57,7 @@ describe('MurderStrategy', () => {
   })
 
   describe('generateMoves()', () => {
-    it('should return MURDER moves targeting the weakest known enemy general', () => {
+    it('should return MDK moves targeting the weakest known enemy general', () => {
       const game = initializeGameState('empty', 'allArmiesOnGeneral')
       game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 10, tiles: 1}
       game.terrain[24] = 0
@@ -67,7 +67,7 @@ describe('MurderStrategy', () => {
       const moves = strategy.generateMoves(game, intel)
 
       expect(moves.length).toBeGreaterThan(0)
-      moves.forEach(m => expect(m.mode).toBe('MURDER'))
+      moves.forEach(m => expect(m.mode).toBe('MDK'))
       expect(moves[moves.length - 1].targetIndex).toBe(24)
     })
 
