@@ -2,12 +2,16 @@ import { BaseStrategy } from './BaseStrategy'
 import { createDarknessMap } from '../utils/darknessMap'
 import { findPath } from '../utils/pathfinding'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
+import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * EXPLORE strategy: move the largest army toward the darkest (most unexplored) area.
+ * Only fires during EXPLORE and EXPAND — once the game is decided (MURDER/DEFEND)
+ * sending armies into fog wastes momentum.
  */
 export class ExploreStrategy extends BaseStrategy {
-  evaluate(game, intel) {
+  evaluate(game, intel, foreignPolicy) {
+    if (foreignPolicy !== FOREIGN_POLICY.EXPLORE && foreignPolicy !== FOREIGN_POLICY.EXPAND) return false
     return intel.myTopArmies.length > 0 &&
       (intel.foggedTerritories.length > 0 || intel.unexploredTerritories.size > 0)
   }

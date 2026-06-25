@@ -3,13 +3,16 @@ import { findPath } from '../utils/pathfinding'
 import { getLocationObject } from '../core/locationObject'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
 import { createDistanceMap } from '../utils/pathfinding'
+import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * CONSOLIDATE strategy: gather the largest outlying army back to the general.
- * Useful for turtling and defensive play.
+ * Only fires during DEFEND — pulling armies home is a defensive maneuver and would
+ * waste offensive momentum in any other phase.
  */
 export class ConsolidateStrategy extends BaseStrategy {
-  evaluate(game, intel) {
+  evaluate(game, intel, foreignPolicy) {
+    if (foreignPolicy !== FOREIGN_POLICY.DEFEND) return false
     return intel.myTopArmies.length > 0 &&
       game.myGeneralLocationIndex &&
       intel.myTopArmies.some(a => a.idx !== game.myGeneralLocationIndex)

@@ -2,13 +2,16 @@ import { BaseStrategy } from './BaseStrategy'
 import { findNeighbors } from '../utils/neighbors'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
 import { canCapture } from '../utils/combat'
+import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * CREEP strategy: find immediate captures by checking every army's neighbors.
  * Converts recursive generateAllSimpleAttacks to iterative.
+ * Skips during DEFEND — spreading thin while threatened is dangerous.
  */
 export class ExpandStrategy extends BaseStrategy {
-  evaluate(game, intel) {
+  evaluate(game, intel, foreignPolicy) {
+    if (foreignPolicy === FOREIGN_POLICY.DEFEND) return false
     return intel.myTopArmies.some(army => {
       const neighbors = findNeighbors({location: army, game})
       return neighbors.some(n => n.attackable && canCapture(army, n, game))

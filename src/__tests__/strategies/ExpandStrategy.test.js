@@ -1,4 +1,5 @@
 import { ExpandStrategy } from '../../strategies/ExpandStrategy'
+import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
 
@@ -13,14 +14,20 @@ describe('ExpandStrategy', () => {
     it('should return true when armies can capture neighboring tiles', () => {
       const game = initializeGameState('empty', 'allArmiesOnGeneral')
       const intel = gatherIntel(game)
-      expect(strategy.evaluate(game, intel)).toBe(true)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.EXPAND)).toBe(true)
+    })
+
+    it('should return false when policy is DEFEND', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      const intel = gatherIntel(game)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.DEFEND)).toBe(false)
     })
 
     it('should return false with no top armies', () => {
       const game = initializeGameState('empty', 'allArmiesOnGeneral')
       const intel = gatherIntel(game)
       intel.myTopArmies = []
-      expect(strategy.evaluate(game, intel)).toBe(false)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.EXPAND)).toBe(false)
     })
   })
 

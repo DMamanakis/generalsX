@@ -3,13 +3,16 @@ import { detectThreats } from '../intel/threatDetection'
 import { findPath } from '../utils/pathfinding'
 import { getLocationObject } from '../core/locationObject'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
+import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * DEFEND strategy: when threats are detected near our general,
  * move the nearest large army toward it as a defensive response.
+ * Only fires when foreign policy is DEFEND — no need to pull back armies when we are dominant.
  */
 export class DefendStrategy extends BaseStrategy {
-  evaluate(game, intel) {
+  evaluate(game, intel, foreignPolicy) {
+    if (foreignPolicy !== FOREIGN_POLICY.DEFEND) return false
     const threats = detectThreats(game)
     return threats.length > 0 && intel.myTopArmies.length > 0
   }

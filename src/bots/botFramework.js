@@ -90,8 +90,8 @@ export class BotFramework {
    */
   _fillQueue() {
     for (const strategy of this.strategies) {
-      if (strategy.evaluate(this.game, this.intel)) {
-        const moves = strategy.generateMoves(this.game, this.intel)
+      if (strategy.evaluate(this.game, this.intel, this.foreignPolicy)) {
+        const moves = strategy.generateMoves(this.game, this.intel, this.foreignPolicy)
         const valid = moves.filter(isValidQueueObject)
         if (valid.length > 0) {
           this.attackQueue.push(...valid)
