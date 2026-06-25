@@ -1,5 +1,7 @@
 node_modules
 config.js
+.env.local
+.env.*.local
 .eslintcache
 coverage
 build

@@ -4,6 +4,11 @@
 const config = {
   GAME_ID: 'your-custom-game-id',
 
+  // Anthropic API key — required only if using AiBot.
+  // Get yours at https://console.anthropic.com
+  ANTHROPIC_API_KEY: 'sk-ant-your-key-here',
+
+
   // Bot 1
   BOT_USER_ID_1: 'your-bot-user-id',
   BOT_NAME_1: 'GeneralsX',

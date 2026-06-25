@@ -17,6 +17,7 @@
     "*.{js,jsx}": ["eslint --cache --fix"]
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "grommet": "^2",
     "react": "^16",
     "react-dom": "^16",

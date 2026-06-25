@@ -8,7 +8,7 @@ import { ForceStart, Join, Quit, Team, ChooseBotVariant, InitializeSocket } from
 const socket = io('wss://botws.generals.io')
 InitializeSocket(socket)
 
-const BOT_VARIANTS = ['MdkBot', 'EnigmaBot', 'FinderBot', 'TurtleBot', 'GiverBot']
+const BOT_VARIANTS = ['MdkBot', 'EnigmaBot', 'FinderBot', 'TurtleBot', 'GiverBot', 'AiBot']
 
 export default function Play({match}) {
   const botId = match.params.bot
