@@ -8,13 +8,16 @@ import { ExploreStrategy } from '../strategies/ExploreStrategy'
 /**
  * EnigmaBot preset: stealth-oriented with defensive awareness.
  * Strategies (priority order): Defend > Murder > Capture > Expand > Explore
+ *
+ * Config choices:
+ *   - CaptureStrategy cityArmyBuffer:3 — selective about cities, only takes clearly affordable ones
  */
 const enigmaBot = {
   init(game) {
     this._framework = new BotFramework([
       new DefendStrategy(),
       new MurderStrategy(),
-      new CaptureStrategy(),
+      new CaptureStrategy({ cityArmyBuffer: 3 }),
       new ExpandStrategy(),
       new ExploreStrategy(),
     ])

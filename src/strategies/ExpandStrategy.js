@@ -6,24 +6,34 @@ import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * CREEP strategy: find immediate captures by checking every army's neighbors.
- * Converts recursive generateAllSimpleAttacks to iterative.
  * Skips during DEFEND — spreading thin while threatened is dangerous.
+ *
+ * Config options:
+ *   minArmySize {number} - Minimum army size required to attempt expansion (default: 2).
+ *     Increase for conservative bots that should only push with substantial forces.
  */
 export class ExpandStrategy extends BaseStrategy {
+  constructor(config = {}) {
+    super({ minArmySize: 2, ...config })
+  }
+
   evaluate(game, intel, foreignPolicy) {
     if (foreignPolicy === FOREIGN_POLICY.DEFEND) return false
-    return intel.myTopArmies.some(army => {
-      const neighbors = findNeighbors({location: army, game})
-      return neighbors.some(n => n.attackable && canCapture(army, n, game))
-    })
+    return intel.myTopArmies
+      .filter(army => army.armies >= this.config.minArmySize)
+      .some(army => {
+        const neighbors = findNeighbors({location: army, game})
+        return neighbors.some(n => n.attackable && canCapture(army, n, game))
+      })
   }
 
   generateMoves(game, intel) {
     const queue = []
     const targets = [...intel.visibleOpponentTerritories, ...intel.emptyTerritories]
-    const availableArmies = [...intel.myTopArmies]
+    const availableArmies = intel.myTopArmies
+      .filter(army => army.armies >= this.config.minArmySize)
 
-    this._generateSimpleAttacks(targets, availableArmies, queue, game)
+    this._generateSimpleAttacks(targets, [...availableArmies], queue, game)
     return queue
   }
 
