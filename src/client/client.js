@@ -6,7 +6,6 @@ import config from '../config'
 import { patch } from './patch'
 import { createGameState } from './gameState'
 import { getVoiceLine } from './voiceLines'
-import { makeLocationObject } from '../core/locationObject'
 
 let forceStartFlag = false
 let game = {}
@@ -201,17 +200,7 @@ export function onUpdate(updateData) {
   // Remove self-owned cities from the neutral cities list
   game.cities = game.cities.filter(cityIdx => game.terrain[cityIdx] !== game.playerIndex)
 
-  // Rebuild locationObjectMap and locations flat array
-  for (let row = 0; row < Math.floor(game.terrain.length / game.mapWidth); row++) {
-    game.locationObjectMap[row] = []
-    for (let col = 0; col <= (game.terrain.length - 1) % game.mapWidth; col++) {
-      const idx = row * game.mapWidth + col
-      const loc = makeLocationObject(idx, game)
-      game.locations[idx] = loc
-      game.locationObjectMap[row][col] = loc
-    }
-  }
-
+  // locationObjectMap is built once per turn inside gatherIntel → buildGameMap
   game.turn = updateData.turn
 
   if (ai && !game.gameOver) {
