@@ -1,12 +1,16 @@
 import { BaseStrategy } from './BaseStrategy'
 import { findPath } from '../utils/pathfinding'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
+import { FOREIGN_POLICY } from '../intel/foreignPolicy'
 
 /**
  * CAPTURE strategy: path to the weakest affordable visible city.
+ * Cities compound army growth, so capturing them is worthwhile during EXPAND and MURDER.
+ * Skips during EXPLORE (too early, waste armies) and DEFEND (wrong time to roam).
  */
 export class CaptureStrategy extends BaseStrategy {
-  evaluate(game, intel) {
+  evaluate(game, intel, foreignPolicy) {
+    if (foreignPolicy === FOREIGN_POLICY.EXPLORE || foreignPolicy === FOREIGN_POLICY.DEFEND) return false
     if (!intel.myTopArmies.length || !game.cities.length) return false
     const source = intel.myTopArmies[0]
     return game.cities.some(cityIdx => source.armies > game.armies[cityIdx] + 1)

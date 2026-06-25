@@ -7,9 +7,10 @@ export class BaseStrategy {
    * Evaluate whether this strategy has any viable moves.
    * @param {object} game - Current game state
    * @param {object} intel - Gathered intel
+   * @param {string} foreignPolicy - Current FOREIGN_POLICY value
    * @returns {boolean} True if this strategy should be attempted
    */
-  evaluate(game, intel) { // eslint-disable-line no-unused-vars
+  evaluate(game, intel, foreignPolicy) { // eslint-disable-line no-unused-vars
     throw new Error('evaluate() must be implemented by subclass')
   }
 
@@ -17,9 +18,10 @@ export class BaseStrategy {
    * Generate a list of attack queue objects for this strategy.
    * @param {object} game - Current game state
    * @param {object} intel - Gathered intel
+   * @param {string} foreignPolicy - Current FOREIGN_POLICY value
    * @returns {Array} Array of attack queue objects
    */
-  generateMoves(game, intel) { // eslint-disable-line no-unused-vars
+  generateMoves(game, intel, foreignPolicy) { // eslint-disable-line no-unused-vars
     throw new Error('generateMoves() must be implemented by subclass')
   }
 }

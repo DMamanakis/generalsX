@@ -34,6 +34,9 @@ export function determineForeignPolicy(game, intel) {
   for (let playerIdx = 0; playerIdx < game.generals.length; playerIdx++) {
     const generalIdx = game.generals[playerIdx]
     if (generalIdx > -1 && game.opponents[playerIdx] && !game.opponents[playerIdx].dead) {
+      // Skip teammates — their general is known but they are not targets
+      if (game.teams && game.teams[playerIdx] === game.team) continue
+
       foundGeneral = true
       const opponent = game.opponents[playerIdx]
       if (game.myScore && game.myScore.total >= opponent.total) {

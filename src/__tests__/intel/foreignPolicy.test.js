@@ -43,4 +43,17 @@ describe('determineForeignPolicy', () => {
     const intel = gatherIntel(game)
     expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.DEFEND)
   })
+
+  it('should return EXPAND (not MURDER) when the only known general belongs to a teammate', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.turn = 150
+    game.generals = [24]
+    game.opponents[0] = {color: 'BLUE', dead: false, tiles: 10, total: 100, availableArmies: 90, generalLocationIndex: 24}
+    game.myScore = {total: 200, tiles: 20}
+    // Player 0 is our teammate
+    game.teams = [1, 1]
+    game.team = 1
+    const intel = gatherIntel(game)
+    expect(determineForeignPolicy(game, intel)).toBe(FOREIGN_POLICY.EXPAND)
+  })
 })
