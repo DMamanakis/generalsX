@@ -38,35 +38,33 @@ export class ExpandStrategy extends BaseStrategy {
   }
 
   _generateSimpleAttacks(targets, armies, queue, game) {
-    if (targets.length === 0 || armies.length === 0) return
+    while (targets.length > 0 && armies.length > 0) {
+      const target = targets.shift()
+      let attackerIdx = -1
+      let usedArmyIdx = -1
 
-    const target = targets.shift()
-    let attackerIdx = -1
-    let usedArmyIdx = -1
-
-    for (let i = 0; i < armies.length; i++) {
-      const neighbors = findNeighbors({location: armies[i], game})
-      for (const neighbor of neighbors) {
-        if (neighbor.idx === target.idx && canCapture(armies[i], target, game)) {
-          attackerIdx = armies[i].idx
-          usedArmyIdx = i
-          break
+      for (let i = 0; i < armies.length; i++) {
+        const neighbors = findNeighbors({location: armies[i], game})
+        for (const neighbor of neighbors) {
+          if (neighbor.idx === target.idx && canCapture(armies[i], target, game)) {
+            attackerIdx = armies[i].idx
+            usedArmyIdx = i
+            break
+          }
         }
+        if (attackerIdx !== -1) break
       }
-      if (attackerIdx !== -1) break
-    }
 
-    if (attackerIdx !== -1) {
-      armies.splice(usedArmyIdx, 1)
-      const move = makeAttackQueueObject({
-        mode: 'CREEP',
-        attacker: attackerIdx,
-        target: target.idx,
-        priority: PRIORITY.CREEP,
-      })
-      if (move) queue.push(move)
+      if (attackerIdx !== -1) {
+        armies.splice(usedArmyIdx, 1)
+        const move = makeAttackQueueObject({
+          mode: 'CREEP',
+          attacker: attackerIdx,
+          target: target.idx,
+          priority: PRIORITY.CREEP,
+        })
+        if (move) queue.push(move)
+      }
     }
-
-    this._generateSimpleAttacks(targets, armies, queue, game)
   }
 }
