@@ -2,6 +2,8 @@ import { BotFramework } from '../../bots/botFramework'
 import { ExpandStrategy } from '../../strategies/ExpandStrategy'
 import { MdkStrategy } from '../../strategies/MdkStrategy'
 import { initializeGameState } from '../../testUtils/testHelper'
+import { buildGameMap } from '../../core/gameMap'
+import { PRIORITY } from '../../utils/attackQueue'
 
 describe('BotFramework', () => {
   let framework
@@ -71,5 +73,44 @@ describe('BotFramework', () => {
 
     // The invalid queue was cleared, and the framework refilled from the new army
     expect(game.socket.emit).toHaveBeenCalledWith('attack', expect.any(Number), expect.any(Number), false)
+  })
+
+  it('should clear the queue when the queued move would lose the tile and priority is low', () => {
+    game.terrain[7] = 0
+    game.armies[7] = 10
+    game.armies[6] = 6
+    buildGameMap(game)
+
+    framework.attackQueue = [{
+      attackerIndex: 6,
+      targetIndex: 7,
+      mode: 'CREEP',
+      priority: PRIORITY.CREEP,
+      sendHalf: false,
+    }]
+
+    framework._validateQueue()
+
+    expect(framework.attackQueue).toEqual([])
+  })
+
+  it('should not clear the queue when the losing move has high priority (e.g. DEFEND)', () => {
+    game.terrain[7] = 0
+    game.armies[7] = 10
+    game.armies[6] = 6
+    buildGameMap(game)
+
+    const queuedMove = {
+      attackerIndex: 6,
+      targetIndex: 7,
+      mode: 'DEFEND',
+      priority: PRIORITY.DEFEND,
+      sendHalf: false,
+    }
+    framework.attackQueue = [queuedMove]
+
+    framework._validateQueue()
+
+    expect(framework.attackQueue).toEqual([queuedMove])
   })
 })

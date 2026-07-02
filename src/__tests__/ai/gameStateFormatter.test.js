@@ -1,5 +1,7 @@
 import { formatGameState } from '../../ai/gameStateFormatter'
-import { loadMemory, addLesson } from '../../ai/aiMemory'
+import { loadMemory, addLesson, recordGameResult } from '../../ai/aiMemory'
+import { computeContextBucket } from '../../ai/aiContext'
+import * as opponentAnalysis from '../../intel/opponentAnalysis'
 
 beforeEach(() => {
   localStorage.clear()
@@ -151,5 +153,51 @@ describe('formatGameState', () => {
       loadMemory())
     expect(result).not.toContain('Opponents (')
     expect(result).not.toContain('Lessons from past games:')
+  })
+
+  it('defaults total/tiles/efficiency to zero for an opponent with no recorded stats', () => {
+    const game = makeGame({ opponents: [{ dead: false, generalLocationIndex: -1, total: 0, tiles: 0 }] })
+    const result = formatGameState(game, makeIntel(), 'EXPLORE',
+      { attack: 0.33, expand: 0.34, defend: 0.33 },
+      loadMemory())
+    expect(result).toMatch(/#0 armies=0 tiles=0 gatherable=0 eff=0\.0/)
+  })
+
+  it('falls back to an empty opponents list when game.opponents is missing', () => {
+    const spy = jest.spyOn(opponentAnalysis, 'rankOpponents').mockReturnValue([])
+    const game = makeGame({ opponents: undefined })
+    const result = formatGameState(game, makeIntel(), 'EXPLORE',
+      { attack: 0.33, expand: 0.34, defend: 0.33 },
+      loadMemory())
+    expect(result).toContain('Enemies alive: 0')
+    spy.mockRestore()
+  })
+
+  it('defaults threats to zero when intel.threats is missing', () => {
+    const intel = { myTopArmies: [] }
+    const result = formatGameState(makeGame(), intel, 'EXPLORE',
+      { attack: 0.33, expand: 0.34, defend: 0.33 },
+      loadMemory())
+    expect(result).toContain('Threats near my crown: 0')
+  })
+
+  it('shows learned weights in the situation line once the bucket has 3+ wins', () => {
+    const game = makeGame()
+    const bucket = computeContextBucket(game)
+    const w = { attack: 0.6, expand: 0.25, defend: 0.15 }
+    let mem = loadMemory()
+    for (let i = 0; i < 3; i++) {
+      mem = recordGameResult(mem, {
+        won: true,
+        finalWeights: w,
+        turns: 100,
+        myScore: { total: 300, tiles: 45 },
+        bucketVisits: { [bucket]: w },
+      })
+    }
+    const result = formatGameState(game, makeIntel(), 'EXPAND',
+      { attack: 0.45, expand: 0.30, defend: 0.25 },
+      mem)
+    expect(result).toMatch(/— learned best: A=\d+% E=\d+% D=\d+%/)
   })
 })

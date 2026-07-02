@@ -52,12 +52,12 @@ const config = {
 
   // Bot 1
   BOT_USER_ID_1: 'your-bot-user-id',
-  BOT_NAME_1:    'GeneralsX',
+  BOT_NAME_1:    'YourBotGameName',
   BOT_VARIANT_1: 'MdkBot',      // which bot to start with (can be changed in the UI)
 
   // Bot 2 (optional — only needed if you run a second browser tab)
   BOT_USER_ID_2: 'your-second-bot-user-id',
-  BOT_NAME_2:    'GeneralsX-2',
+  BOT_NAME_2:    'YourBotGameName-2',
   BOT_VARIANT_2: 'MdkBot',
 }
 export default config
@@ -480,7 +480,7 @@ To run a specific file:
 npm test -- --testPathPattern="MdkStrategy"
 ```
 
-Coverage thresholds: 30% branches / 40% functions, lines, statements (UI and config files excluded).
+Coverage thresholds (enforced, CI fails below these): 30% branches / 40% functions, lines, statements (UI and config files excluded). In practice the suite runs much higher — statements/lines/functions are effectively 100% and branches ~97%, including `aiBot.js` and `anthropicClient.js` (the `openai` SDK is mocked via `jest.mock('openai', ...)`; see `src/__tests__/ai/anthropicClient.test.js` and `src/__tests__/bots/aiBot.test.js`).
 
 A `testHelper.js` provides pre-built game states for unit tests:
 

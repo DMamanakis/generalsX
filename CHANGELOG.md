@@ -7,6 +7,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.0] - 2026-07-02
+
+Closes nearly every remaining test-coverage gap in the repo. Overall coverage went from 76.14% statements / 75.23% branches to 99.77% statements / 96.62% branches / 100% functions / 100% lines, with zero production source changes — this was purely additive test work plus one real infra fix.
+
+### Fixed
+
+- `openai` was declared in `package.json` but had never actually been installed (`npm install` was never re-run after the Anthropic → OpenAI provider swap) — `node_modules/openai` didn't exist, so AiBot would have failed at runtime the moment it tried to consult the LLM. Installed via `npm install openai --legacy-peer-deps` (the `--legacy-peer-deps` flag is required due to a pre-existing, unrelated `grommet`/`styled-components` peer-dependency conflict in this project). `openai` bumped to the actually-resolved `^4.104.0`.
+
+### Added — test coverage
+
+- **New test files** for previously 0%-covered modules, all now at or near 100%: the 5 bot presets (`enigmaBot`, `finderBot`, `giverBot`, `mdkBot`, `turtleBot`), `BaseStrategy`, `ConsolidateStrategy`, `ExploreStrategy`, `threatDetection`, `core/locationObject.js`, `anthropicClient.js` (via `jest.mock('openai', ...)` plus a `{ virtual: true }` mock for the gitignored `src/config.js`), and `aiBot.js` (via a `jest.mock('../../ai/anthropicClient')` auto-mock — no network dependency needed).
+- **Extended existing test files** to close specific uncovered lines/branches across `CaptureForTeammateStrategy`, `CaptureStrategy`, `DefendStrategy`, `ExtendedConsolidateStrategy`, `MdkStrategy`, `ReinforceTeammateStrategy`, `foreignPolicy`, `intelGathering`, `opponentAnalysis`, `teamIntel`, `attackQueue`, `combat`, `pathfinding`, `botFramework`, `aiContext`, `aiDirective`, `aiMemory`, and `gameStateFormatter`.
+- Roughly 150 new/updated tests added across the suite (377 total, all passing).
+
+### Notes
+
+- A handful of branch-level gaps remain by design, not oversight — e.g. a few `|| 0` fallback ternaries and defensive null-checks in `aiMemory.js`, `pathfinding.js`, and `ConsolidateStrategy.js` that would require contorting test setup (mocking internal BFS/pathfinding helpers) for negligible bug-catching value. These were left uncovered rather than forced.
+- No production source files were modified to chase coverage — every gap was closed by adding a test scenario that reaches the code through legitimate game-state setup, or by mocking a strategy's own internal dependency (`jest.spyOn` on `findPath`, `createDistanceMap`, `makeAttackQueueObject`, etc.) to exercise a defensive branch that's unreachable through normal BFS/pathfinding output.
+
+---
+
 ## [1.2.0] - 2026-07-02
 
 Replaces AiBot's fixed 50-turn consult cadence with a continuous, latency-bound loop: the bot keeps playing under its current directive and asks for the next one as soon as the previous consult resolves, rather than waiting out an arbitrary timer.

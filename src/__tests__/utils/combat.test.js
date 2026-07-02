@@ -70,4 +70,15 @@ describe('pathStrength', () => {
     const source = game.locationObjectMap[1][1]
     expect(pathStrength([source], game)).toBe(15)
   })
+
+  it('should reduce strength while traversing a multi-tile path', () => {
+    const path = [
+      {armies: 5, terrain: -1}, // final target (path[0])
+      {armies: 20, terrain: 1}, // source tile (last element)
+    ]
+    // strength starts at path[1].armies = 20, then combines with path[0]
+    // via getArmyAttackDiff({armies: 20, terrain: game.playerIndex}, path[0], game)
+    // = 20 - 5 - 1 = 14
+    expect(pathStrength(path, game)).toBe(14)
+  })
 })

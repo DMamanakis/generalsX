@@ -47,6 +47,11 @@ describe('computeContextBucket', () => {
     })
     expect(computeContextBucket(game)).toBe('early|ahead')
   })
+
+  it('treats a strongest live opponent with no recorded total as zero, defaulting to even', () => {
+    const game = makeGame({ myTotal: 100, opponents: [{ dead: false, tiles: 5 }] })
+    expect(computeContextBucket(game)).toBe('early|even')
+  })
 })
 
 describe('manhattanDistance', () => {

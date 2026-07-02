@@ -2,6 +2,8 @@ import { CaptureForTeammateStrategy } from '../../strategies/CaptureForTeammateS
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
 import { buildGameMap } from '../../core/gameMap'
+import * as teamIntel from '../../intel/teamIntel'
+import * as attackQueueUtils from '../../utils/attackQueue'
 
 /**
  * 5×5 team game:
@@ -83,6 +85,14 @@ describe('CaptureForTeammateStrategy', () => {
       // Just verify the function doesn't crash
       expect(() => strategy.evaluate(game, intel, 'EXPLORE')).not.toThrow()
     })
+
+    it('returns false when teammate exists but there are no top armies', () => {
+      // myArmies: 1 is below usefulArmyThreshold (2), so myTopArmies is empty
+      const game = makeTeamGame({ myArmies: 1 })
+      const intel = gatherIntel(game)
+      expect(intel.myTopArmies.length).toBe(0)
+      expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(false)
+    })
   })
 
   describe('generateMoves', () => {
@@ -130,6 +140,55 @@ describe('CaptureForTeammateStrategy', () => {
       // With armies=1 (below usefulArmyThreshold), myTopArmies is empty
       intel.myTopArmies = []
       expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('returns empty when candidates exist but none are reachable from the source', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      // Wall off our top army (idx 0) with mountains so no candidate is reachable
+      game.terrain[1] = -2
+      game.terrain[5] = -2
+      buildGameMap(game)
+      const intel = gatherIntel(game)
+      expect(intel.myTopArmies[0].idx).toBe(0)
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('returns empty when the resolved capture target is the same tile as the source (path length 1)', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      const intel = gatherIntel(game)
+      // Simulate our top-army tile (idx 7) becoming vacant and bordering a teammate tile,
+      // while intel still holds a stale reference pointing at that same idx.
+      game.terrain[7] = -1
+      game.terrain[12] = 2
+      buildGameMap(game)
+      intel.myTopArmies[0] = { idx: 7, armies: 10, isMine: true, terrain: 1 }
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('skips the handoff step when the resolved capture target has no adjacent teammate tile', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      const intel = gatherIntel(game)
+      // Force the candidate list to a tile that is empty and reachable but not actually
+      // adjacent to any teammate territory.
+      const spy = jest.spyOn(teamIntel, 'getEmptyTilesAdjacentToTeammate').mockReturnValue([game.locations[2]])
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves.length).toBeGreaterThan(0)
+      const lastMove = moves[moves.length - 1]
+      expect(game.locations[lastMove.targetIndex].isTeam).toBe(false)
+    })
+
+    it('skips pushing moves when makeAttackQueueObject returns null for both the path and handoff steps', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      const intel = gatherIntel(game)
+      const spy = jest.spyOn(attackQueueUtils, 'makeAttackQueueObject').mockReturnValue(null)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
     })
   })
 

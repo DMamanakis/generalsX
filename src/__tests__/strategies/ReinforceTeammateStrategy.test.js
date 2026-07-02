@@ -2,6 +2,7 @@ import { ReinforceTeammateStrategy } from '../../strategies/ReinforceTeammateStr
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
 import { buildGameMap } from '../../core/gameMap'
+import * as attackQueueUtils from '../../utils/attackQueue'
 
 /**
  * 5×5 team game:
@@ -85,6 +86,32 @@ describe('ReinforceTeammateStrategy', () => {
       const intel = gatherIntel(game)
       expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(false)
     })
+
+    it('returns false when teammate exists but there are no top armies', () => {
+      // myArmies: 1 is below usefulArmyThreshold (2), so myTopArmies is empty
+      const game = makeTeamGame({ myArmies: 1 })
+      const intel = gatherIntel(game)
+      expect(intel.myTopArmies.length).toBe(0)
+      expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(false)
+    })
+
+    it('falls back to searching for the nearest teammate tile when the general is unknown, ' +
+      'and returns false when game.locations is unavailable', () => {
+      const game = makeTeamGame({ myArmies: 15 })
+      game.opponents[2].generalLocationIndex = -1
+      const intel = gatherIntel(game)
+      delete game.locations
+      expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(false)
+    })
+
+    it('returns true via the nearest-teammate-tile fallback (no source) when the general is unknown', () => {
+      const game = makeTeamGame({ myArmies: 15 })
+      game.opponents[2].generalLocationIndex = -1
+      const intel = gatherIntel(game)
+      // game.locations is intact and non-empty here, so _findNearestTeammateTile(game)
+      // (called from evaluate() without a source) returns the first teammate tile found.
+      expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(true)
+    })
   })
 
   describe('generateMoves', () => {
@@ -132,6 +159,33 @@ describe('ReinforceTeammateStrategy', () => {
       buildGameMap(game)
       const intel = gatherIntel(game)
       expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('returns empty when no top armies available', () => {
+      const strategy = new ReinforceTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 15 })
+      const intel = gatherIntel(game)
+      intel.myTopArmies = []
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('returns empty when the teammate general is on the same tile as our source (path length 1)', () => {
+      const strategy = new ReinforceTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 15 })
+      // Point the teammate's general at our own top-army tile (idx 0) to force a same-tile path
+      game.opponents[2].generalLocationIndex = 0
+      const intel = gatherIntel(game)
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('skips pushing a move when makeAttackQueueObject returns null', () => {
+      const strategy = new ReinforceTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 15 })
+      const intel = gatherIntel(game)
+      const spy = jest.spyOn(attackQueueUtils, 'makeAttackQueueObject').mockReturnValue(null)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
     })
   })
 

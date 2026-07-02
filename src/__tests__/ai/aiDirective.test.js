@@ -38,6 +38,16 @@ describe('parseDirective', () => {
     expect(parseDirective('Expand your territory now.')).toBeNull()
   })
 
+  it('returns null when JSON braces never close (unbalanced)', () => {
+    const text = '{"weights": {"attack": 0.5, "expand": 0.3, "defend": 0.2'
+    expect(parseDirective(text)).toBeNull()
+  })
+
+  it('returns null when the extracted JSON is malformed (JSON.parse throws)', () => {
+    const text = '{"weights": {attack: 0.5, "expand": 0.3, "defend": 0.2}}'
+    expect(parseDirective(text)).toBeNull()
+  })
+
   it('returns null if weights fields are missing', () => {
     const text = '{"directive": "ATTACK"}'
     expect(parseDirective(text)).toBeNull()

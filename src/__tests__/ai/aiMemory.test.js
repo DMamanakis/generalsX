@@ -53,6 +53,21 @@ describe('loadMemory', () => {
   })
 })
 
+describe('saveMemory error handling', () => {
+  it('logs a warning and does not throw when localStorage.setItem fails', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    const setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded')
+    })
+
+    expect(() => saveMemory(loadMemory())).not.toThrow()
+    expect(warnSpy).toHaveBeenCalledWith('[AiBot] failed to save memory to localStorage', expect.any(Error))
+
+    setItemSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+})
+
 describe('saveMemory / loadMemory roundtrip', () => {
   it('persists and restores memory', () => {
     const mem = loadMemory()

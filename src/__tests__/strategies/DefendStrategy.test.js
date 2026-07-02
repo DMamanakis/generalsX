@@ -2,6 +2,8 @@ import { DefendStrategy } from '../../strategies/DefendStrategy'
 import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
+import * as pathfindingUtils from '../../utils/pathfinding'
+import * as attackQueueUtils from '../../utils/attackQueue'
 
 describe('DefendStrategy', () => {
   let strategy
@@ -62,6 +64,40 @@ describe('DefendStrategy', () => {
       const intel = gatherIntel(game)
       intel.myTopArmies = []
       expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('should return empty array when the only top army is the general itself', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      // Only the general (idx 6, 25 armies) qualifies as a top army; the other tile
+      // (idx 10) has just 1 army, below the useful-army threshold.
+      game.terrain[7] = 0
+      game.armies[7] = 5
+      const intel = gatherIntel(game)
+      expect(intel.myTopArmies.length).toBe(1)
+      expect(intel.myTopArmies[0].idx).toBe(6)
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('should return empty array when findPath yields a degenerate (same-tile) path', () => {
+      const spy = jest.spyOn(pathfindingUtils, 'findPath').mockReturnValue([{ idx: 6 }])
+      const game = initializeGameState('empty', 'twoLargeArmies')
+      game.terrain[7] = 0
+      game.armies[7] = 5
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
+    })
+
+    it('should skip pushing a move when makeAttackQueueObject returns null', () => {
+      const spy = jest.spyOn(attackQueueUtils, 'makeAttackQueueObject').mockReturnValue(null)
+      const game = initializeGameState('empty', 'twoLargeArmies')
+      game.terrain[7] = 0
+      game.armies[7] = 5
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
     })
   })
 })
