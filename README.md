@@ -227,7 +227,7 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 ### AiBot *(LLM-driven, self-improving)*
 
-**Philosophy:** Completely ruthless, and gets smarter the more it plays. The same rules-based strategy stack plays every turn; every 50 turns it consults an LLM (`gpt-4o-mini`) for a strategic check-in that adjusts attack/expand/defend weights, sets an overall posture, and can call out a specific opponent to focus on.
+**Philosophy:** Completely ruthless, and gets smarter the more it plays. The same rules-based strategy stack plays every turn; in the background, it continuously consults an LLM (`gpt-4o-mini`) for a strategic check-in that adjusts attack/expand/defend weights, sets an overall posture, and can call out a specific opponent to focus on. A new consult fires as soon as the previous one resolves (bounded by a small cooldown for API safety), so consult frequency tracks actual network latency instead of a fixed turn timer — gameplay never blocks waiting on it.
 
 **Default weights:** attack 45% / expand 30% / defend 25%
 

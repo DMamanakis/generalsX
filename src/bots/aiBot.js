@@ -6,11 +6,14 @@
  *   Layer 1 (tactical, every turn): BotFramework runs the existing strategy stack
  *     synchronously — DefendStrategy, MdkStrategy, CaptureStrategy, etc.
  *
- *   Layer 2 (strategic, every 50 turns): async LLM consultation that returns
- *     updated weights for attack/expand/defend, an overall posture, and an optional
- *     focus target (which opponent to hunt). These reorder the strategy stack, tune
- *     each strategy's config (e.g. minArmySize, cityArmyBuffer), and steer MdkStrategy's
- *     target selection.
+ *   Layer 2 (strategic, continuous): async LLM consultation that returns updated
+ *     weights for attack/expand/defend, an overall posture, and an optional focus
+ *     target (which opponent to hunt). A new consult fires as soon as the previous
+ *     one resolves and a small cooldown has elapsed — frequency tracks actual
+ *     round-trip latency rather than a fixed turn interval, so the bot gets as much
+ *     strategic input as the network allows without ever spamming the API. These
+ *     reorder the strategy stack, tune each strategy's config (e.g. minArmySize,
+ *     cityArmyBuffer), and steer MdkStrategy's target selection.
  *
  * LLM calls are fire-and-forget — the bot keeps playing with current weights while
  * waiting for a response. Failures are silently swallowed; the bot degrades
@@ -44,8 +47,15 @@ import {
   addLesson,
 } from '../ai/aiMemory'
 
-/** Turns between LLM consultations */
-const AI_CONSULT_INTERVAL = 50
+/**
+ * Minimum turns between consult *attempts* — a safety floor against spamming the
+ * API if a response ever comes back faster than a turn tick, not a strategic
+ * cadence. Combined with the _pendingAICall guard, the bot naturally asks again
+ * as soon as the previous consult resolves: real round-trip latency almost always
+ * exceeds this cooldown, so this constant rarely does anything beyond preventing
+ * back-to-back calls on an unusually fast response.
+ */
+const MIN_CONSULT_COOLDOWN = 10
 /** Don't consult the LLM until the board has developed */
 const MIN_TURNS_BEFORE_AI = 25
 
@@ -102,7 +112,7 @@ const aiBot = {
     const shouldConsult =
       !this._pendingAICall &&
       turn >= MIN_TURNS_BEFORE_AI &&
-      turn - this._lastAIConsult >= AI_CONSULT_INTERVAL
+      turn - this._lastAIConsult >= MIN_CONSULT_COOLDOWN
 
     if (shouldConsult) {
       this._consultClaude()

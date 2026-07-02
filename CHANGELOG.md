@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] - 2026-07-02
+
+Replaces AiBot's fixed 50-turn consult cadence with a continuous, latency-bound loop: the bot keeps playing under its current directive and asks for the next one as soon as the previous consult resolves, rather than waiting out an arbitrary timer.
+
+### Changed
+
+- `src/bots/aiBot.js` — `AI_CONSULT_INTERVAL` (fixed 50-turn gate) replaced with `MIN_CONSULT_COOLDOWN` (10 turns), a safety floor against spamming the API on an unusually fast response rather than a strategic cadence. Combined with the existing `_pendingAICall` guard, a new consult now fires as soon as the prior one resolves and the cooldown has elapsed — consult frequency tracks actual round-trip latency instead of a fixed interval, so fast networks get more strategic input and slow networks never block tactical play (which stays fully synchronous throughout).
+
+### Notes
+
+- Strategic decisions (attack/expand/defend balance, posture, focus target) tolerate staleness well since game phase and army parity rarely flip within a few turns — unlike tactical (per-tile) decisions, which is why only the strategic layer is allowed to run behind real time.
+
+---
+
 ## [1.1.0] - 2026-07-02
 
 Upgrades AiBot from a single global weight blend into a genuinely situational, self-reflective strategic layer. The tactical (every-turn) rules engine is untouched — all of this lives in the strategic consult layer and its memory.
