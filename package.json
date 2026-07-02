@@ -50,8 +50,8 @@
     "lint-staged": "^11"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider react-scripts build",
     "lint": "eslint --cache '**/*.+(js|jsx)'",
     "lint:noprettier": "eslint --cache --rule 'prettier/prettier: [0]' '**/*.+(js|jsx)'",
     "lint:fix": "eslint --cache --fix '**/*.+(js|jsx)'",
