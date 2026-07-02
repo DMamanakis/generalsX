@@ -13,7 +13,7 @@ const config = {
   // Bot 1
   BOT_USER_ID_1: 'your-bot-user-id',
   BOT_NAME_1: 'GeneralsX',
-  BOT_VARIANT_1: 'EnigmaBot',
+  BOT_VARIANT_1: 'MiddleBot',
 
   // Bot 2
   BOT_USER_ID_2: 'your-second-bot-user-id',

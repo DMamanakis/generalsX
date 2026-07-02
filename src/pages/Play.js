@@ -8,7 +8,7 @@ import { ForceStart, Join, Quit, Team, ChooseBotVariant, InitializeSocket } from
 const socket = io('wss://botws.generals.io')
 InitializeSocket(socket)
 
-const BOT_VARIANTS = ['MdkBot', 'EnigmaBot', 'FinderBot', 'TurtleBot', 'GiverBot', 'AiBot']
+const BOT_VARIANTS = ['MdkBot', 'MiddleBot', 'FinderBot', 'TurtleBot', 'GiverBot', 'AiBot']
 
 export default function Play({match}) {
   const botId = match.params.bot
@@ -22,7 +22,7 @@ export default function Play({match}) {
   const cache = (mode, data) => {
     if (mode === 'READ') {
       let local = localStorage.getItem(`generals-x-${botId}`)
-      local = local ? JSON.parse(local) : {botVariantValue: 'EnigmaBot', showMap: true}
+      local = local ? JSON.parse(local) : {botVariantValue: 'MiddleBot', showMap: true}
       return local[data]
     } else if (mode === 'WRITE') {
       localStorage.setItem(`generals-x-${botId}`, JSON.stringify(data))

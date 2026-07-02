@@ -7,6 +7,21 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] - 2026-07-02
+
+Renames the `EnigmaBot` preset to `MiddleBot` (same bot, same strategy stack — Defend > Mdk > Capture > Expand > Explore — just a clearer name). Every reference across code, tests, and docs was updated; no behavior changed.
+
+### Changed
+
+- `src/bots/enigmaBot.js` → `src/bots/middleBot.js` (`enigmaBot` object renamed to `middleBot`)
+- `src/__tests__/bots/enigmaBot.test.js` → `src/__tests__/bots/middleBot.test.js`
+- `src/client/client.js` — `BOT_MAP.EnigmaBot` → `BOT_MAP.MiddleBot`
+- `src/pages/Play.js` — `BOT_VARIANTS` list and the default cached bot variant
+- `src/config.template.js` — default `BOT_VARIANT_1`
+- README.md, CLAUDE.md — bot catalog entry, architecture tree, and example references
+
+---
+
 ## [1.3.0] - 2026-07-02
 
 Closes nearly every remaining test-coverage gap in the repo. Overall coverage went from 76.14% statements / 75.23% branches to 99.77% statements / 96.62% branches / 100% functions / 100% lines, with zero production source changes — this was purely additive test work plus one real infra fix.
@@ -17,7 +32,7 @@ Closes nearly every remaining test-coverage gap in the repo. Overall coverage we
 
 ### Added — test coverage
 
-- **New test files** for previously 0%-covered modules, all now at or near 100%: the 5 bot presets (`enigmaBot`, `finderBot`, `giverBot`, `mdkBot`, `turtleBot`), `BaseStrategy`, `ConsolidateStrategy`, `ExploreStrategy`, `threatDetection`, `core/locationObject.js`, `anthropicClient.js` (via `jest.mock('openai', ...)` plus a `{ virtual: true }` mock for the gitignored `src/config.js`), and `aiBot.js` (via a `jest.mock('../../ai/anthropicClient')` auto-mock — no network dependency needed).
+- **New test files** for previously 0%-covered modules, all now at or near 100%: the 5 bot presets (`middleBot`, `finderBot`, `giverBot`, `mdkBot`, `turtleBot`), `BaseStrategy`, `ConsolidateStrategy`, `ExploreStrategy`, `threatDetection`, `core/locationObject.js`, `anthropicClient.js` (via `jest.mock('openai', ...)` plus a `{ virtual: true }` mock for the gitignored `src/config.js`), and `aiBot.js` (via a `jest.mock('../../ai/anthropicClient')` auto-mock — no network dependency needed).
 - **Extended existing test files** to close specific uncovered lines/branches across `CaptureForTeammateStrategy`, `CaptureStrategy`, `DefendStrategy`, `ExtendedConsolidateStrategy`, `MdkStrategy`, `ReinforceTeammateStrategy`, `foreignPolicy`, `intelGathering`, `opponentAnalysis`, `teamIntel`, `attackQueue`, `combat`, `pathfinding`, `botFramework`, `aiContext`, `aiDirective`, `aiMemory`, and `gameStateFormatter`.
 - Roughly 150 new/updated tests added across the suite (377 total, all passing).
 
@@ -174,7 +189,7 @@ Initial release of the GeneralsX composable bot strategy framework.
 - **BotFramework** (`src/bots/botFramework.js`) — strategy orchestrator with attack queue management; emits one `attack` socket event per turn
 - **BaseStrategy** (`src/strategies/BaseStrategy.js`) — base class with `evaluate(game, intel)` + `generateMoves(game, intel)` interface
 - **Strategy implementations:** `DefendStrategy`, `ConsolidateStrategy`, `CaptureStrategy`, `ExpandStrategy`, `ExploreStrategy`, `MurderStrategy`
-- **Bot presets:** `MurderBot` (now MdkBot), `EnigmaBot`, `FinderBot`, `TurtleBot`
+- **Bot presets:** `MurderBot` (now MdkBot), `MiddleBot` (renamed from EnigmaBot), `FinderBot`, `TurtleBot`
 - **Intel pipeline:** `gatherIntel()` builds the tile map and categorizes territory each turn; `determineForeignPolicy()` returns the current phase constant
 - **LocationObject** — per-tile object with `isMine`, `isTeam`, `attackable`, `isCity`, `isGeneral`, `armies`, `terrain`, `idx`
 - **Utilities:** `attackQueue.js`, `combat.js`, `darknessMap.js`, `neighbors.js`, `pathfinding.js`

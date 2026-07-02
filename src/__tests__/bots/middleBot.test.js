@@ -1,4 +1,4 @@
-import enigmaBot from '../../bots/enigmaBot'
+import middleBot from '../../bots/middleBot'
 import { BotFramework } from '../../bots/botFramework'
 import { DefendStrategy } from '../../strategies/DefendStrategy'
 import { MdkStrategy } from '../../strategies/MdkStrategy'
@@ -7,7 +7,7 @@ import { ExpandStrategy } from '../../strategies/ExpandStrategy'
 import { ExploreStrategy } from '../../strategies/ExploreStrategy'
 import { initializeGameState } from '../../testUtils/testHelper'
 
-describe('enigmaBot', () => {
+describe('middleBot', () => {
   let game
 
   beforeEach(() => {
@@ -15,13 +15,13 @@ describe('enigmaBot', () => {
   })
 
   it('initializes a BotFramework without throwing', () => {
-    expect(() => enigmaBot.init(game)).not.toThrow()
-    expect(enigmaBot._framework).toBeInstanceOf(BotFramework)
+    expect(() => middleBot.init(game)).not.toThrow()
+    expect(middleBot._framework).toBeInstanceOf(BotFramework)
   })
 
   it('builds strategies in Defend > Mdk > Capture > Expand > Explore order', () => {
-    enigmaBot.init(game)
-    const strategies = enigmaBot._framework.strategies
+    middleBot.init(game)
+    const strategies = middleBot._framework.strategies
     expect(strategies.length).toBe(5)
     expect(strategies[0]).toBeInstanceOf(DefendStrategy)
     expect(strategies[1]).toBeInstanceOf(MdkStrategy)
@@ -31,22 +31,22 @@ describe('enigmaBot', () => {
   })
 
   it('configures CaptureStrategy with cityArmyBuffer: 3', () => {
-    enigmaBot.init(game)
-    const captureStrategy = enigmaBot._framework.strategies[2]
+    middleBot.init(game)
+    const captureStrategy = middleBot._framework.strategies[2]
     expect(captureStrategy.config.cityArmyBuffer).toBe(3)
   })
 
   it('move() does nothing before the opening threshold', () => {
-    enigmaBot.init(game)
+    middleBot.init(game)
     game.turn = 10
-    enigmaBot.move()
+    middleBot.move()
     expect(game.socket.emit).not.toHaveBeenCalled()
   })
 
   it('move() delegates to the framework and drives a turn', () => {
-    enigmaBot.init(game)
+    middleBot.init(game)
     game.turn = 30
-    enigmaBot.move()
+    middleBot.move()
     expect(game.socket.emit).toHaveBeenCalledWith('attack', expect.any(Number), expect.any(Number), expect.any(Boolean))
   })
 })

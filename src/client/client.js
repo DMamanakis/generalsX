@@ -1,5 +1,5 @@
 import MdkBot from '../bots/mdkBot'
-import EnigmaBot from '../bots/enigmaBot'
+import MiddleBot from '../bots/middleBot'
 import FinderBot from '../bots/finderBot'
 import TurtleBot from '../bots/turtleBot'
 import GiverBot from '../bots/giverBot'
@@ -17,7 +17,7 @@ let socket
 
 export const BOT_MAP = {
   MdkBot,
-  EnigmaBot,
+  MiddleBot,
   FinderBot,
   TurtleBot,
   GiverBot,

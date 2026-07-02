@@ -163,7 +163,7 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 ---
 
-### EnigmaBot *(defensive stalker)*
+### MiddleBot *(defensive stalker)*
 
 **Philosophy:** Same hunt-and-kill as MdkBot but more cautious about cities — only grabs ones it can clearly afford.
 
@@ -397,7 +397,7 @@ export const BOT_MAP = {
 In `src/pages/Play.js`, add to `BOT_VARIANTS`:
 
 ```js
-const BOT_VARIANTS = ['MdkBot', 'EnigmaBot', ..., 'MyBot']
+const BOT_VARIANTS = ['MdkBot', 'MiddleBot', ..., 'MyBot']
 ```
 
 Your new bot now appears in the dropdown.
@@ -417,10 +417,10 @@ src/
 ├── bots/                   # Bot presets (strategy lists)
 │   ├── botFramework.js     # Orchestrator — runs strategies each turn
 │   ├── aiBot.js
-│   ├── enigmaBot.js
 │   ├── finderBot.js
 │   ├── giverBot.js
 │   ├── mdkBot.js
+│   ├── middleBot.js
 │   └── turtleBot.js
 ├── client/
 │   ├── client.js           # Socket.IO event wiring (game_start, game_update, etc.)

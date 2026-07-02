@@ -6,13 +6,13 @@ import { ExpandStrategy } from '../strategies/ExpandStrategy'
 import { ExploreStrategy } from '../strategies/ExploreStrategy'
 
 /**
- * EnigmaBot preset: stealth-oriented with defensive awareness.
+ * MiddleBot preset: stealth-oriented with defensive awareness.
  * Strategies (priority order): Defend > Mdk > Capture > Expand > Explore
  *
  * Config choices:
  *   - CaptureStrategy cityArmyBuffer:3 — selective about cities, only takes clearly affordable ones
  */
-const enigmaBot = {
+const middleBot = {
   init(game) {
     this._framework = new BotFramework([
       new DefendStrategy(),
@@ -29,4 +29,4 @@ const enigmaBot = {
   },
 }
 
-export default enigmaBot
+export default middleBot
