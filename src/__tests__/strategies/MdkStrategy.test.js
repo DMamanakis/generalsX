@@ -2,6 +2,7 @@ import { MdkStrategy } from '../../strategies/MdkStrategy'
 import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
+import * as attackQueueUtils from '../../utils/attackQueue'
 
 describe('MdkStrategy', () => {
   let strategy
@@ -54,6 +55,14 @@ describe('MdkStrategy', () => {
       const lastMove = moves[moves.length - 1]
       expect(lastMove.targetIndex).toBe(20)
     })
+
+    it('should return false when there are no top armies', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 10, tiles: 1}
+      const intel = gatherIntel(game)
+      intel.myTopArmies = []
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.MDK)).toBe(false)
+    })
   })
 
   describe('generateMoves()', () => {
@@ -86,6 +95,53 @@ describe('MdkStrategy', () => {
       const intel = gatherIntel(game)
       intel.myTopArmies = []
       expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('should return empty array when the target general is on the same tile as our source (path length 1)', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      // Point the opponent's "general" at our own top-army tile (idx 6) to force a same-tile path
+      game.opponents[0] = {dead: false, generalLocationIndex: 6, total: 10, tiles: 1}
+      const intel = gatherIntel(game)
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('should skip pushing a move when makeAttackQueueObject returns null', () => {
+      const spy = jest.spyOn(attackQueueUtils, 'makeAttackQueueObject').mockReturnValue(null)
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 10, tiles: 1}
+      game.terrain[24] = 0
+      game.armies[24] = 5
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
+    })
+  })
+
+  describe('preferredTargetIndex', () => {
+    it('defaults to null when not configured', () => {
+      expect(new MdkStrategy().config.preferredTargetIndex).toBeNull()
+    })
+
+    it('targets the configured opponent even when a weaker one exists', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      // Opponent 0 is weakest (would normally win target selection); opponent 1 is preferred.
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 5, tiles: 1}
+      game.opponents[1] = {dead: false, generalLocationIndex: 20, total: 100, tiles: 10}
+      const preferring = new MdkStrategy({ preferredTargetIndex: 1 })
+      const intel = gatherIntel(game)
+      const moves = preferring.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(20)
+    })
+
+    it('falls back to the weakest known general when the preferred target has no known general', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 5, tiles: 1}
+      const preferring = new MdkStrategy({ preferredTargetIndex: 1 }) // opponent 1 doesn't exist
+      const intel = gatherIntel(game)
+      const moves = preferring.generateMoves(game, intel)
+      expect(moves[moves.length - 1].targetIndex).toBe(24)
     })
   })
 })

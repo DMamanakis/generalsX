@@ -66,4 +66,31 @@ describe('gatherIntel', () => {
     const intel = gatherIntel(game)
     expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL')).toBe(true)
   })
+
+  it('should create a fresh unexploredTerritories set on turn 1', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.turn = 1
+    const intel = gatherIntel(game)
+    expect(intel.unexploredTerritories).toBeInstanceOf(Set)
+    // Own tiles (6, 10) should already be removed from the fresh set
+    expect(intel.unexploredTerritories.has(6)).toBe(false)
+    expect(intel.unexploredTerritories.has(10)).toBe(false)
+  })
+
+  it('should preserve unexploredTerritories from prevIntel across turns', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.turn = 30
+    const prevSet = new Set([1, 2, 3])
+    const prevIntel = {unexploredTerritories: prevSet}
+    const intel = gatherIntel(game, prevIntel)
+    expect(intel.unexploredTerritories).toBe(prevSet)
+  })
+
+  it('should build a fresh unexploredTerritories set when prevIntel has none', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.turn = 30
+    const intel = gatherIntel(game, {})
+    expect(intel.unexploredTerritories).toBeInstanceOf(Set)
+    expect(intel.unexploredTerritories).not.toBeNull()
+  })
 })

@@ -32,7 +32,7 @@ Pre-push hook runs `npm run lint && npm run test:ci` automatically via Husky.
 
 ### Bot Framework (strategy pattern)
 
-The core abstraction is in `src/bots/botFramework.js`. Each bot preset (e.g. `murderBot.js`, `enigmaBot.js`) creates a `BotFramework` with an **ordered array of strategy instances** (highest-priority first).
+The core abstraction is in `src/bots/botFramework.js`. Each bot preset (e.g. `murderBot.js`, `middleBot.js`) creates a `BotFramework` with an **ordered array of strategy instances** (highest-priority first).
 
 Each game turn:
 1. `BotFramework.move()` calls `gatherIntel()` → `determineForeignPolicy()` → `_validateQueue()` → `_fillQueue()`

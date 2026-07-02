@@ -99,6 +99,15 @@ describe('getTeammateInfo', () => {
     expect(info.playerIndex).not.toBe(game.playerIndex)
   })
 
+  it('defaults total and tiles to 0 when the teammate object omits them', () => {
+    const game = makeTeamGame()
+    game.opponents[2] = {color: 'BLUE', dead: false}
+    const info = getTeammateInfo(game)
+    expect(info).not.toBeNull()
+    expect(info.total).toBe(0)
+    expect(info.tiles).toBe(0)
+  })
+
   it('skips entries that are -1 (sentinel)', () => {
     const game = makeTeamGame()
     game.opponents[2] = -1

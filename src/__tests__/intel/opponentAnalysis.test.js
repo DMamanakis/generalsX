@@ -43,6 +43,13 @@ describe('opponentAnalysis', () => {
       expect(rankOpponents(game)).toEqual([])
     })
 
+    it('should compute armyEfficiency as 0 when opponent has no tiles', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.opponents[0] = {dead: false, total: 10, tiles: 0}
+      const ranked = rankOpponents(game)
+      expect(ranked[0].armyEfficiency).toBe(0)
+    })
+
     it('should compute hasKnownGeneral correctly', () => {
       const game = initializeGameState('empty', 'allArmiesOnGeneral')
       game.opponents[0] = {dead: false, total: 10, tiles: 1, generalLocationIndex: 24}

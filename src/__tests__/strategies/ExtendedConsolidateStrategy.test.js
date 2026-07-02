@@ -2,6 +2,8 @@ import { ExtendedConsolidateStrategy } from '../../strategies/ExtendedConsolidat
 import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
+import * as pathfindingUtils from '../../utils/pathfinding'
+import * as attackQueueUtils from '../../utils/attackQueue'
 
 describe('ExtendedConsolidateStrategy', () => {
   describe('default config', () => {
@@ -37,6 +39,38 @@ describe('ExtendedConsolidateStrategy', () => {
       expect(moves.length).toBeGreaterThan(0)
       moves.forEach(m => expect(m.mode).toBe('CONSOLIDATE'))
     })
+
+    it('should return false in evaluate when there are no armies at all', () => {
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      intel.myArmies = []
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.DEFEND)).toBe(false)
+    })
+
+    it('should return empty array in generateMoves when there are no armies at all', () => {
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      intel.myArmies = []
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+
+    it('should return empty array when findPath yields a degenerate (same-tile) path', () => {
+      const spy = jest.spyOn(pathfindingUtils, 'findPath').mockReturnValue([{ idx: 6 }])
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
+    })
+
+    it('should skip pushing a move when makeAttackQueueObject returns null', () => {
+      const spy = jest.spyOn(attackQueueUtils, 'makeAttackQueueObject').mockReturnValue(null)
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      expect(moves).toEqual([])
+    })
   })
 
   describe('custom config: minArmySize', () => {
@@ -64,6 +98,31 @@ describe('ExtendedConsolidateStrategy', () => {
       const game = initializeGameState('occupiedCorner', 'cornerArmies')
       const intel = gatherIntel(game)
       expect(strategy.evaluate(game, intel, FOREIGN_POLICY.DEFEND)).toBe(false)
+    })
+
+    it('should return empty array from generateMoves when no candidates meet the thresholds', () => {
+      const strategy = new ExtendedConsolidateStrategy({ minDistanceToConsolidate: 99 })
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      expect(strategy.generateMoves(game, intel)).toEqual([])
+    })
+  })
+
+  describe('scoring reduce edge cases', () => {
+    it('falls back to a score of 0 for candidates with a falsy recorded distance, and keeps the current best when a later candidate scores lower', () => {
+      // Real BFS distance is never falsy (0) for a non-general candidate, since the general's
+      // own tile is always excluded from candidates. Mock the distance map to exercise the
+      // `|| 0` fallback (for both the initial "best" and a compared "army") and the branch of
+      // the score comparison where the current best is retained.
+      const strategy = new ExtendedConsolidateStrategy({ minDistanceToConsolidate: 0 })
+      const spy = jest.spyOn(pathfindingUtils, 'createDistanceMap').mockReturnValue({ 0: 0, 7: 5, 11: 1 })
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      spy.mockRestore()
+      // idx 7 (score 5*5=25) should win over idx 0 (falsy dist, score 0) and idx 11 (score 1*5=5)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[0].attackerIndex).toBe(7)
     })
   })
 

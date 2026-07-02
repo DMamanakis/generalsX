@@ -29,6 +29,11 @@ describe('makeAttackQueueObject', () => {
     expect(obj).toBeNull()
   })
 
+  it('should default mode to "notSet" when mode is omitted', () => {
+    const obj = makeAttackQueueObject({attacker: 1, target: 2})
+    expect(obj.mode).toBe('notSet')
+  })
+
   it('should set sendHalf correctly', () => {
     const obj = makeAttackQueueObject({mode: 'CAPTURE', attacker: 1, target: 2, sendHalf: true})
     expect(obj.sendHalf).toBe(true)

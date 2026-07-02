@@ -1,8 +1,9 @@
 import MdkBot from '../bots/mdkBot'
-import EnigmaBot from '../bots/enigmaBot'
+import MiddleBot from '../bots/middleBot'
 import FinderBot from '../bots/finderBot'
 import TurtleBot from '../bots/turtleBot'
 import GiverBot from '../bots/giverBot'
+import AiBot from '../bots/aiBot'
 import config from '../config'
 import { patch } from './patch'
 import { createGameState } from './gameState'
@@ -16,10 +17,11 @@ let socket
 
 export const BOT_MAP = {
   MdkBot,
-  EnigmaBot,
+  MiddleBot,
   FinderBot,
   TurtleBot,
   GiverBot,
+  AiBot,
 }
 
 const COLOR_MAP = [
@@ -215,12 +217,14 @@ export function onUpdate(updateData) {
 }
 
 function onLose() {
+  if (ai && ai.onGameEnd) ai.onGameEnd(false)
   socket.emit('chat_message', game.chatRoom, getVoiceLine('FAILURE'))
   Quit()
   addGameLog('Game lost...disconnecting.\nClick Join Game to rejoin for a rematch.')
 }
 
 function onWin() {
+  if (ai && ai.onGameEnd) ai.onGameEnd(true)
   addGameLog('Game won!')
   socket.emit('chat_message', game.chatRoom, getVoiceLine('SUCCESS'))
   Quit()

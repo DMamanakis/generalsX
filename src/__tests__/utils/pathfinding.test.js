@@ -1,5 +1,6 @@
 import { createDistanceMap, findPath, findShortestPath } from '../../utils/pathfinding'
 import { initializeGameState } from '../../testUtils/testHelper'
+import { buildGameMap } from '../../core/gameMap'
 
 describe('createDistanceMap', () => {
   it('should create a distance map from a source tile', () => {
@@ -62,6 +63,10 @@ describe('findPath', () => {
 })
 
 describe('findShortestPath', () => {
+  it('should throw without game context', () => {
+    expect(() => findShortestPath({distanceMap: [], targetLocationOrPath: {idx: 0}, game: null})).toThrow()
+  })
+
   it('should return the target location when already at destination', () => {
     const game = initializeGameState('empty', 'allArmiesOnGeneral')
     const target = game.locationObjectMap[1][1]
@@ -69,5 +74,47 @@ describe('findShortestPath', () => {
     const path = findShortestPath({distanceMap, targetLocationOrPath: target, game})
 
     expect(path).toContain(target)
+  })
+
+  it('should break distance ties between neighbors using army attack differential', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    // idx6 is source; idx12 (row2,col2) is reachable at distance 2 via both
+    // idx7 (row1,col2) and idx11 (row2,col1), which are tied at distance 1 from idx12.
+    // Give idx11 a much larger army so the tie-break favors it over idx7.
+    game.armies[7] = 1
+    game.armies[11] = 20
+    buildGameMap(game)
+
+    const source = game.locationObjectMap[1][1] // idx6
+    const distanceMap = createDistanceMap({location: source, game})
+    expect(distanceMap[7]).toBe(1)
+    expect(distanceMap[11]).toBe(1)
+    expect(distanceMap[12]).toBe(2)
+
+    const target = game.locationObjectMap[2][2] // idx12
+    const path = findShortestPath({distanceMap, targetLocationOrPath: target, game})
+
+    // Tie-break should route the path through idx11 (higher army differential)
+    expect(path.some(loc => loc.idx === 11)).toBe(true)
+  })
+
+  it('should fall back to any unvisited neighbor when the current tile is unreachable', () => {
+    const game = initializeGameState('mountainous', 'allArmiesOnGeneral')
+    // idx14's only real neighbors are 9, 13, and 19 (already a mountain).
+    // Blocking 9 and 13 too completely isolates idx14 from the rest of the map.
+    game.terrain[9] = -2
+    game.terrain[13] = -2
+    buildGameMap(game)
+
+    const source = game.locationObjectMap[1][1] // idx6
+    const distanceMap = createDistanceMap({location: source, game})
+    expect(distanceMap[14]).toBeUndefined() // confirm idx14 is truly unreached
+
+    const target = game.locationObjectMap[2][4] // idx14
+    const path = findShortestPath({distanceMap, targetLocationOrPath: target, game})
+
+    // The fallback path-stepping logic must still terminate and start at the target
+    expect(path[0].idx).toBe(14)
+    expect(path.length).toBeGreaterThan(1)
   })
 })
