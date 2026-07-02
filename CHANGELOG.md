@@ -7,6 +7,44 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.0] - 2026-07-02
+
+Fixes the actual reason the bot never joined a live game after the socket connection was
+already working (1.6.0): the app never registered a username for its bot identity, and even
+when it tried, the account was already tagged as a human ("NA server") account.
+
+### Fixed
+
+- **`set_username` was never actually called.** `onConnect` had it commented out, and the
+  commented line referenced `config.BOT_USER_ID`/`config.BOT_NAME` — keys that don't even
+  exist (config is per-slot: `BOT_USER_ID_1`, `BOT_NAME_1`, etc.), so it wouldn't have worked
+  even uncommented. `Join(userID, username)` already receives the correct per-slot values, so
+  `set_username` now fires from there, immediately before `join_private`.
+- **No visibility into `set_username`/`join_private` rejections.** The server reports these
+  over dedicated events (`error_set_username`, `gio_error`) rather than emit acknowledgements
+  — confirmed by directly probing the live server with a throwaway script. Added listeners
+  for both, logged to the visible Game Log. This is what finally surfaced the real blocker:
+  `error_set_username: "Bots still aren't allowed on the NA server. We appreciate the effort
+  though!"` for an ID that had already picked a username through the normal website UI.
+- **Bot names now require the literal `[Bot]` prefix** (no space, e.g. `[Bot]MyBot`) —
+  confirmed against `skye2k2/generals-bot`, this project's direct predecessor (same
+  now-renamed `MurderBot`/`EnigmaBot` variant names), whose docs specify this exact format.
+  Updated `src/config.template.js` with the correct format and a comment explaining why a
+  bot's user ID must come from a **never-before-used** ID (an incognito window, read from
+  `localStorage` before ever touching the username picker) rather than one that's already
+  picked a username through the site's normal UI.
+- Updated the README's "Where do I get a bot user ID?" callout with the corrected, verified
+  steps (incognito window, read before interacting with the prompt, `[Bot]` name prefix).
+
+### Notes
+
+- generals.io still fully supports bot development — per the current Dev Center, bots just
+  aren't allowed on the standard human NA/EU servers; they run on the dedicated Bot Server
+  (`bot.generals.io`) or self-hosted custom games, which is exactly what this project already
+  targets. The blocker was account state (a human-claimed ID), not a platform-wide ban.
+
+---
+
 ## [1.6.0] - 2026-07-02
 
 Fixes the bot never actually joining a real generals.io lobby — the socket never connected
