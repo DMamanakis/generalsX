@@ -101,6 +101,8 @@ export function FetchMapData() {
 export function InitializeSocket(externalSocket) {
   socket = externalSocket
   socket.on('connect', onConnect)
+  socket.on('connect_error', onConnectError)
+  socket.on('error', onServerError)
   socket.on('game_start', onStart)
   socket.on('game_update', onUpdate)
   socket.on('game_lost', onLose)
@@ -109,11 +111,20 @@ export function InitializeSocket(externalSocket) {
 }
 
 function onConnect() {
+  addGameLog(`Socket connected (id: ${socket.id})`)
   // socket.emit('set_username', config.BOT_USER_ID, config.BOT_NAME)
 }
 
-function onDisconnect() {
-  addGameLog('Game disconnected.')
+function onConnectError(err) {
+  addGameLog(`Socket connection failed: ${err?.message || err}`)
+}
+
+function onServerError(err) {
+  addGameLog(`Server error: ${JSON.stringify(err)}`)
+}
+
+function onDisconnect(reason) {
+  addGameLog(`Game disconnected: ${reason}`)
 }
 
 export function onStart(startData) {

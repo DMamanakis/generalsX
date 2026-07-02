@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Box, CheckBox, Select } from 'grommet'
-import io from 'socket.io-client'
+import { io } from 'socket.io-client'
 import config from '../config'
 import Map from '../components/Map'
 import { ForceStart, Join, Quit, Team, ChooseBotVariant, InitializeSocket } from '../client/client'

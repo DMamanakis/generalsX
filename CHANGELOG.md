@@ -7,6 +7,44 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.6.0] - 2026-07-02
+
+Fixes the bot never actually joining a real generals.io lobby — the socket never connected
+at all, and the app had zero way to tell you that.
+
+### Fixed
+
+- **The bot could never connect to `botws.generals.io`.** generals.io's server now speaks
+  Engine.IO protocol v4; this project pinned `socket.io-client: ^2`, which only speaks the
+  old protocol v3 and gets rejected outright (`{"code":5,"message":"Unsupported protocol
+  version"}`, HTTP 400 on the handshake). Every button click (Join, Force Start, Team) was
+  emitting into a socket that never connected — nothing ever reached the server, and the
+  actual bot.generals.io lobby never saw the bot. Upgraded to `socket.io-client: ^4.8.3`
+  (protocol v4). Verified directly against the live server with the upgraded client
+  (confirmed a real handshake + `connect` event, not just a build check).
+- **`src/pages/Play.js` used a default import** (`import io from 'socket.io-client'`).
+  Socket.io-client v4 dropped its default export in favor of a named `io` export — under
+  Babel's CommonJS interop, the old default import would have resolved to the entire
+  `{ io, Manager, Socket, ... }` exports object instead of the connect function, crashing
+  with `io is not a function` the moment the page loaded. Changed to
+  `import { io } from 'socket.io-client'`.
+- **The app had no way to surface a failed connection or server rejection.** Every log line
+  in `Join()`/`ForceStart()`/`Team()` was written unconditionally at click-time, regardless
+  of whether the emit ever reached the server — so a fully-broken socket looked identical to
+  a working one in the UI. Added `connect_error` and `error` socket listeners (logged to the
+  visible Game Log), and `onConnect`/`onDisconnect` now log the actual socket ID / disconnect
+  reason instead of doing nothing. This is what actually surfaced the root cause above
+  (`Socket connection failed: xhr poll error`) instead of it failing silently forever.
+
+### Notes
+
+- Local `config.js` (gitignored, not part of this commit) also had `BOT_VARIANT_1: 'mdkBot'`
+  — the bot map keys are PascalCase (`MdkBot`), so this exact string wouldn't match and would
+  silently fall back to a default bot. Worth checking your own `config.js` if you're seeing
+  "Unrecognized bot variant" in the Game Log.
+
+---
+
 ## [1.5.0] - 2026-07-02
 
 Upgrades `react-scripts` from v3 to v5, fixing `npm start`/`npm run build` outright and
