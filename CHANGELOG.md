@@ -7,6 +7,63 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] - 2026-07-02
+
+Upgrades `react-scripts` from v3 to v5, fixing `npm start`/`npm run build` outright and
+removing two accumulated workarounds in the process.
+
+### Fixed
+
+- **`npm start`/`npm run build` failed to compile** — `node_modules/openai/index.js` uses `??`
+  (nullish coalescing). `react-scripts` v3's webpack config runs *every* `.js` file under
+  `node_modules` through a minimal Babel preset (`babel-preset-react-app/dependencies`) that
+  only rewrites ES-module syntax to CommonJS and has no ES2020+ syntax plugins, so parsing
+  failed with "Unexpected token" before any transform ran. This wasn't `openai`-specific —
+  any modern npm package shipping `??`/`?.` in its main entry would hit the same wall.
+  `react-scripts` v5 (webpack 5, modern Babel) supports this syntax natively.
+- **`NODE_OPTIONS=--openssl-legacy-provider` is no longer needed.** That flag was added in a
+  prior fix to work around webpack 4's MD4-hashing crash on Node 17+'s OpenSSL 3. webpack 5
+  doesn't hit this, so it's removed from the `start`/`build` scripts — confirmed via a clean
+  `npm run build` and dev-server run with the flag absent.
+- **A hidden `ajv` peer-dependency conflict**, surfaced by the upgrade itself: `ajv-keywords`
+  (pulled in by `schema-utils`/`terser-webpack-plugin`, part of webpack 5's toolchain) declares
+  `ajv@^8.8.2` as a **peer** dependency. This repo already installs with `--legacy-peer-deps`
+  (needed for an unrelated `grommet`/`styled-components@4` conflict), and that flag disables
+  *all* peer-dependency resolution — so npm silently hoisted an incompatible `ajv@6.15.0`
+  instead of nesting a compatible `ajv@8`, and the build crashed with
+  `Cannot find module 'ajv/dist/compile/codegen'`. Installing with `--force` instead resolves
+  peer dependencies correctly (nests `ajv@8.20.0` where needed) while still tolerating the
+  known grommet/styled-components mismatch — `--legacy-peer-deps` should be considered
+  deprecated for this repo's installs going forward in favor of `--force`.
+
+### Changed
+
+- `package.json` — `react-scripts: ^3` → `^5.0.1`; `start`/`build` scripts no longer set
+  `NODE_OPTIONS`.
+- `package-lock.json` — regenerated (983 packages net removed vs. the v3 tree; react-scripts
+  v5's dependency footprint is meaningfully leaner).
+
+### Verified
+
+- `npm run build` produces real, deployable output in `build/` (checked file sizes and
+  bundle content).
+- `npm start` serves a real webpack 5 bundle (`HTTP 200`, modern IIFE bootstrap format)
+  without the OpenSSL flag.
+- `npm run lint` — 0 errors, same 35 pre-existing warnings as before the upgrade.
+- `CI=true npm run test:ci` — all 377 tests pass, coverage unchanged
+  (99.77%/96.61%/100%/100%).
+- react-scripts v5's bundled build-time ESLint now reads this project's own `.eslintrc.js`
+  (unlike v3, which used an isolated internal config/ESLint version — the exact mismatch that
+  caused the earlier `Play.js` `-- comment` syntax bug). Every warning the v5 build reported
+  matched `npm run lint`'s existing, already-accepted warning list exactly — no new findings.
+
+### Notes
+
+- No React version change (`^16` retained, `ReactDOM.render` untouched) — this was purely a
+  build-tooling upgrade.
+
+---
+
 ## [1.4.0] - 2026-07-02
 
 Renames the `EnigmaBot` preset to `MiddleBot` (same bot, same strategy stack — Defend > Mdk > Capture > Expand > Explore — just a clearer name). Every reference across code, tests, and docs was updated; no behavior changed.
