@@ -62,8 +62,13 @@ export function Join(userID, username) {
   const logEl = document.getElementById('log')
   if (logEl) logEl.innerHTML = gameLog
   socket.emit('set_username', userID, username)
-  addGameLog(`Joined custom game at http://bot.generals.io/games/${encodeURIComponent(config.GAME_ID)}`)
-  socket.emit('join_private', config.GAME_ID, userID)
+  // The server processes set_username asynchronously — firing join_private immediately
+  // after can race ahead of that and get rejected with "You must choose a username to
+  // continue playing!" even though the username registration is actually in flight.
+  setTimeout(() => {
+    addGameLog(`Joined custom game at http://bot.generals.io/games/${encodeURIComponent(config.GAME_ID)}`)
+    socket.emit('join_private', config.GAME_ID, userID)
+  }, 1000)
 }
 
 export function Quit() {

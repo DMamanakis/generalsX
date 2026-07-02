@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.1] - 2026-07-02
+
+Fixes a race condition between `set_username` and `join_private` that surfaced immediately
+after 1.7.0 landed: a fresh, never-used bot ID still got rejected with `gio_error: "You must
+choose a username to continue playing!"`, alongside an empty-string `error_set_username`
+response — the same empty-error pattern seen when live-probing the server with a genuinely
+new ID. `Join()` fired both events back-to-back with no gap; `join_private` was very likely
+evaluated before the server finished processing the username registration.
+
+### Fixed
+
+- `Join()` now waits 1 second after emitting `set_username` before emitting `join_private`,
+  giving the server time to actually register the username first.
+
+---
+
 ## [1.7.0] - 2026-07-02
 
 Fixes the actual reason the bot never joined a live game after the socket connection was

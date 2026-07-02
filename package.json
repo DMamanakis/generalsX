@@ -1,6 +1,6 @@
 {
   "name": "generals-x",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "A composable strategy framework for bot.generals.io bots",
   "main": "index.html",
   "browserslist": {
