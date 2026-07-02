@@ -1,5 +1,6 @@
 import {
   parseDirective,
+  applyPosture,
   weightsToStrategyConfig,
   weightsToStrategyOrder,
 } from '../../ai/aiDirective'
@@ -56,6 +57,66 @@ describe('parseDirective', () => {
     const text = '{"weights": {"attack": 0.33, "expand": 0.34, "defend": 0.33}}'
     const result = parseDirective(text)
     expect(result.directive).toBe('BALANCED')
+  })
+})
+
+describe('parseDirective — focusTarget/posture', () => {
+  it('parses focusTarget and posture when present', () => {
+    const text = '{"weights": {"attack": 0.5, "expand": 0.3, "defend": 0.2}, "directive": "ATTACK", "focusTarget": 2, "posture": "ALL_IN", "reasoning": "go"}'
+    const result = parseDirective(text)
+    expect(result.focusTarget).toBe(2)
+    expect(result.posture).toBe('ALL_IN')
+  })
+
+  it('defaults focusTarget and posture to null when absent', () => {
+    const text = '{"weights": {"attack": 0.5, "expand": 0.3, "defend": 0.2}}'
+    const result = parseDirective(text)
+    expect(result.focusTarget).toBeNull()
+    expect(result.posture).toBeNull()
+  })
+
+  it('defaults focusTarget to null when not a number', () => {
+    const text = '{"weights": {"attack": 0.5, "expand": 0.3, "defend": 0.2}, "focusTarget": "none"}'
+    expect(parseDirective(text).focusTarget).toBeNull()
+  })
+})
+
+describe('applyPosture', () => {
+  const base = { attack: 0.4, expand: 0.3, defend: 0.3 }
+
+  it('returns weights unchanged for a null posture', () => {
+    expect(applyPosture(base, null)).toEqual(base)
+  })
+
+  it('returns weights unchanged for an unknown posture', () => {
+    expect(applyPosture(base, 'NOT_A_POSTURE')).toEqual(base)
+  })
+
+  it('boosts attack and lowers defend for ALL_IN, still summing to 1.0', () => {
+    const result = applyPosture(base, 'ALL_IN')
+    expect(result.attack).toBeGreaterThan(base.attack)
+    expect(result.defend).toBeLessThan(base.defend)
+    expect(result.attack + result.expand + result.defend).toBeCloseTo(1.0)
+  })
+
+  it('boosts defend and lowers attack for TURTLE, still summing to 1.0', () => {
+    const result = applyPosture(base, 'TURTLE')
+    expect(result.defend).toBeGreaterThan(base.defend)
+    expect(result.attack).toBeLessThan(base.attack)
+    expect(result.attack + result.expand + result.defend).toBeCloseTo(1.0)
+  })
+
+  it('mildly tilts attack up for HARASS, still summing to 1.0', () => {
+    const result = applyPosture(base, 'HARASS')
+    expect(result.attack).toBeGreaterThan(base.attack)
+    expect(result.attack + result.expand + result.defend).toBeCloseTo(1.0)
+  })
+
+  it('never lets a weight collapse to zero even under an aggressive posture', () => {
+    const lowDefend = { attack: 0.5, expand: 0.45, defend: 0.05 }
+    const result = applyPosture(lowDefend, 'ALL_IN')
+    expect(result.defend).toBeGreaterThan(0)
+    expect(result.attack + result.expand + result.defend).toBeCloseTo(1.0)
   })
 })
 

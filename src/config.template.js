@@ -4,9 +4,10 @@
 const config = {
   GAME_ID: 'your-custom-game-id',
 
-  // Anthropic API key — required only if using AiBot.
-  // Get yours at https://console.anthropic.com
-  ANTHROPIC_API_KEY: 'sk-ant-your-key-here',
+  // OpenAI API key — required only if using AiBot.
+  // Recommended: use .env.local instead (add REACT_APP_OPENAI_API_KEY=sk-...)
+  // Get your key at https://platform.openai.com/api-keys
+  OPENAI_API_KEY: 'sk-your-key-here',
 
 
   // Bot 1

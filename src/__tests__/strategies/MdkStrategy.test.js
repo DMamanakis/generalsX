@@ -88,4 +88,31 @@ describe('MdkStrategy', () => {
       expect(strategy.generateMoves(game, intel)).toEqual([])
     })
   })
+
+  describe('preferredTargetIndex', () => {
+    it('defaults to null when not configured', () => {
+      expect(new MdkStrategy().config.preferredTargetIndex).toBeNull()
+    })
+
+    it('targets the configured opponent even when a weaker one exists', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      // Opponent 0 is weakest (would normally win target selection); opponent 1 is preferred.
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 5, tiles: 1}
+      game.opponents[1] = {dead: false, generalLocationIndex: 20, total: 100, tiles: 10}
+      const preferring = new MdkStrategy({ preferredTargetIndex: 1 })
+      const intel = gatherIntel(game)
+      const moves = preferring.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(20)
+    })
+
+    it('falls back to the weakest known general when the preferred target has no known general', () => {
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.opponents[0] = {dead: false, generalLocationIndex: 24, total: 5, tiles: 1}
+      const preferring = new MdkStrategy({ preferredTargetIndex: 1 }) // opponent 1 doesn't exist
+      const intel = gatherIntel(game)
+      const moves = preferring.generateMoves(game, intel)
+      expect(moves[moves.length - 1].targetIndex).toBe(24)
+    })
+  })
 })

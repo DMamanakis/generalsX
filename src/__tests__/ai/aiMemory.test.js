@@ -4,6 +4,9 @@ import {
   recordGameResult,
   getLearnedWeights,
   getMemoryStats,
+  getBucketStats,
+  addLesson,
+  getLessons,
   DEFAULT_WEIGHTS,
 } from '../../ai/aiMemory'
 
@@ -118,6 +121,113 @@ describe('getLearnedWeights', () => {
     // Verify it is a copy, not the same reference
     weights.attack = 999
     expect(mem.currentWeights.attack).not.toBe(999)
+  })
+})
+
+describe('recordGameResult with buckets', () => {
+  it('increments losses for a visited bucket on a loss', () => {
+    let mem = loadMemory()
+    mem = recordGameResult(mem, { ...makeLoss(), bucketVisits: { 'mid|even': makeWeights(0.5, 0.3, 0.2) } })
+    expect(mem.buckets['mid|even'].losses).toBe(1)
+    expect(mem.buckets['mid|even'].wins).toBe(0)
+  })
+
+  it('increments wins and accumulates winWeightSums for a visited bucket on a win', () => {
+    let mem = loadMemory()
+    const w = makeWeights(0.6, 0.2, 0.2)
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|even': w } })
+    expect(mem.buckets['mid|even'].wins).toBe(1)
+    expect(mem.buckets['mid|even'].winWeightSums.attack).toBeCloseTo(0.6)
+  })
+
+  it('does not affect buckets that were not visited', () => {
+    let mem = loadMemory()
+    mem = recordGameResult(mem, { ...makeWin(), bucketVisits: { 'early|behind': makeWeights(0.7, 0.1, 0.2) } })
+    expect(mem.buckets['mid|even']).toBeUndefined()
+  })
+
+  it('works fine when bucketVisits is omitted (backward compatible)', () => {
+    const mem = loadMemory()
+    expect(() => recordGameResult(mem, makeWin())).not.toThrow()
+  })
+})
+
+describe('getLearnedWeights with a bucket key', () => {
+  it('falls back to global weights when the bucket has fewer than 3 wins', () => {
+    let mem = loadMemory()
+    const w = makeWeights(0.7, 0.2, 0.1)
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|ahead': w } })
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|ahead': w } })
+    expect(getLearnedWeights(mem, 'mid|ahead')).toEqual(mem.currentWeights)
+  })
+
+  it('returns the bucket average once it has 3+ wins', () => {
+    let mem = loadMemory()
+    const w = makeWeights(0.7, 0.2, 0.1)
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|ahead': w } })
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|ahead': w } })
+    mem = recordGameResult(mem, { ...makeWin(w), bucketVisits: { 'mid|ahead': w } })
+    expect(getLearnedWeights(mem, 'mid|ahead').attack).toBeCloseTo(0.7)
+  })
+
+  it('returns the global weights for a bucket that has never been visited', () => {
+    const mem = loadMemory()
+    expect(getLearnedWeights(mem, 'late|behind')).toEqual(mem.currentWeights)
+  })
+})
+
+describe('getBucketStats', () => {
+  it('returns N/A with zero games for an unseen bucket', () => {
+    const stats = getBucketStats(loadMemory(), 'mid|even')
+    expect(stats.games).toBe(0)
+    expect(stats.winRate).toBe('N/A')
+    expect(stats.weights).toBeNull()
+  })
+
+  it('computes a win rate across wins and losses in a bucket', () => {
+    let mem = loadMemory()
+    mem = recordGameResult(mem, { ...makeWin(), bucketVisits: { 'mid|even': DEFAULT_WEIGHTS } })
+    mem = recordGameResult(mem, { ...makeLoss(), bucketVisits: { 'mid|even': DEFAULT_WEIGHTS } })
+    const stats = getBucketStats(mem, 'mid|even')
+    expect(stats.games).toBe(2)
+    expect(stats.winRate).toBe('50.0%')
+  })
+
+  it('only includes weights once the bucket has 3+ wins', () => {
+    let mem = loadMemory()
+    mem = recordGameResult(mem, { ...makeWin(), bucketVisits: { 'mid|even': DEFAULT_WEIGHTS } })
+    expect(getBucketStats(mem, 'mid|even').weights).toBeNull()
+  })
+})
+
+describe('addLesson / getLessons', () => {
+  it('adds a lesson retrievable via getLessons', () => {
+    let mem = loadMemory()
+    mem = addLesson(mem, { result: 'won', bucket: 'mid|even', text: 'attack harder next time' })
+    expect(getLessons(mem)).toHaveLength(1)
+    expect(getLessons(mem)[0].text).toBe('attack harder next time')
+  })
+
+  it('ignores lessons with no text', () => {
+    const mem = loadMemory()
+    const updated = addLesson(mem, { result: 'won' })
+    expect(updated.lessons).toEqual(mem.lessons)
+  })
+
+  it('caps lessons at 10, keeping the most recent', () => {
+    let mem = loadMemory()
+    for (let i = 0; i < 15; i++) {
+      mem = addLesson(mem, { result: 'won', text: `lesson ${i}` })
+    }
+    expect(mem.lessons).toHaveLength(10)
+    expect(mem.lessons[mem.lessons.length - 1].text).toBe('lesson 14')
+    expect(mem.lessons[0].text).toBe('lesson 5')
+  })
+
+  it('does not mutate the input memory', () => {
+    const mem = loadMemory()
+    addLesson(mem, { result: 'won', text: 'test' })
+    expect(mem.lessons).toHaveLength(0)
   })
 })
 

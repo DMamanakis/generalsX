@@ -1,5 +1,5 @@
 import { formatGameState } from '../../ai/gameStateFormatter'
-import { loadMemory } from '../../ai/aiMemory'
+import { loadMemory, addLesson } from '../../ai/aiMemory'
 
 beforeEach(() => {
   localStorage.clear()
@@ -8,11 +8,13 @@ beforeEach(() => {
 function makeGame(overrides = {}) {
   return {
     turn: 100,
+    mapWidth: 5,
+    myGeneralLocationIndex: 6,
     myScore: { total: 300, tiles: 45 },
     opponents: [
       -1, // dead
-      { dead: false, generalLocationIndex: 12 },
-      { dead: false, generalLocationIndex: -1 },
+      { dead: false, generalLocationIndex: 12, total: 200, tiles: 30 },
+      { dead: false, generalLocationIndex: -1, total: 50, tiles: 10 },
     ],
     ...overrides,
   }
@@ -102,5 +104,52 @@ describe('formatGameState', () => {
         { attack: 0.33, expand: 0.34, defend: 0.33 },
         loadMemory()),
     ).not.toThrow()
+  })
+
+  it('includes a per-opponent line with distance when the general is known', () => {
+    const result = formatGameState(
+      makeGame(), makeIntel(), 'EXPAND',
+      { attack: 0.45, expand: 0.30, defend: 0.25 },
+      loadMemory(),
+    )
+    expect(result).toMatch(/#1 armies=200 tiles=30/)
+    expect(result).toMatch(/genKnown=yes dist=\d+/)
+  })
+
+  it('shows genKnown=no and dist=n/a for opponents with unknown generals', () => {
+    const result = formatGameState(
+      makeGame(), makeIntel(), 'EXPAND',
+      { attack: 0.45, expand: 0.30, defend: 0.25 },
+      loadMemory(),
+    )
+    expect(result).toMatch(/#2 armies=50 tiles=10.*genKnown=no dist=n\/a/)
+  })
+
+  it('includes the current situational bucket line', () => {
+    const result = formatGameState(
+      makeGame(), makeIntel(), 'EXPAND',
+      { attack: 0.45, expand: 0.30, defend: 0.25 },
+      loadMemory(),
+    )
+    expect(result).toMatch(/Situation "mid\|/)
+  })
+
+  it('includes recent lessons when present in memory', () => {
+    const mem = addLesson(loadMemory(), { result: 'won', text: 'push attack earlier' })
+    const result = formatGameState(
+      makeGame(), makeIntel(), 'EXPAND',
+      { attack: 0.45, expand: 0.30, defend: 0.25 },
+      mem,
+    )
+    expect(result).toContain('push attack earlier')
+  })
+
+  it('omits opponent/lesson sections with no opponents and no lessons', () => {
+    const game = makeGame({ opponents: [] })
+    const result = formatGameState(game, makeIntel(), 'EXPLORE',
+      { attack: 0.33, expand: 0.34, defend: 0.33 },
+      loadMemory())
+    expect(result).not.toContain('Opponents (')
+    expect(result).not.toContain('Lessons from past games:')
   })
 })

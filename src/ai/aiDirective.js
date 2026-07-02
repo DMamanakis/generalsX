@@ -40,7 +40,7 @@ export function parseDirective(text) {
     if (!jsonStr) return null
 
     const parsed = JSON.parse(jsonStr)
-    const { weights, directive, reasoning } = parsed
+    const { weights, directive, reasoning, focusTarget, posture } = parsed
 
     if (
       !weights ||
@@ -63,9 +63,51 @@ export function parseDirective(text) {
       },
       directive: directive || 'BALANCED',
       reasoning: reasoning || '',
+      // Multiplayer target selection and overall stance — both optional, default to
+      // null so responses/tests predating this schema still parse cleanly.
+      focusTarget: typeof focusTarget === 'number' ? focusTarget : null,
+      posture: typeof posture === 'string' ? posture : null,
     }
   } catch {
     return null
+  }
+}
+
+/**
+ * Posture-based weight adjustments layered on top of the LLM's raw weights, then
+ * renormalized to sum to 1.0. Lets the LLM express one overall stance instead of
+ * hand-balancing three interacting floats every consult.
+ */
+const POSTURE_ADJUSTMENTS = {
+  ALL_IN: { attack: 0.25, expand: 0, defend: -0.15 },
+  TURTLE: { attack: -0.15, expand: -0.05, defend: 0.20 },
+  HARASS: { attack: 0.10, expand: 0.05, defend: -0.05 },
+}
+/** Floor so no weight collapses to (near) zero after a posture adjustment */
+const MIN_WEIGHT = 0.05
+
+/**
+ * Apply a posture adjustment to a weights triple and renormalize to sum to 1.0.
+ * Unknown/null postures return the weights unchanged.
+ * @param {{ attack, expand, defend }} weights
+ * @param {'ALL_IN'|'TURTLE'|'HARASS'|null} posture
+ * @returns {{ attack, expand, defend }}
+ */
+export function applyPosture(weights, posture) {
+  const adjustment = POSTURE_ADJUSTMENTS[posture]
+  if (!adjustment) return weights
+
+  const adjusted = {
+    attack: Math.max(MIN_WEIGHT, weights.attack + adjustment.attack),
+    expand: Math.max(MIN_WEIGHT, weights.expand + adjustment.expand),
+    defend: Math.max(MIN_WEIGHT, weights.defend + adjustment.defend),
+  }
+  const sum = adjusted.attack + adjusted.expand + adjusted.defend
+
+  return {
+    attack: adjusted.attack / sum,
+    expand: adjusted.expand / sum,
+    defend: adjusted.defend / sum,
   }
 }
 
