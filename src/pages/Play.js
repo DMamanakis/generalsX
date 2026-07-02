@@ -68,7 +68,11 @@ export default function Play({match}) {
     }
 
     return () => observer.disconnect()
-  }, []) // eslint-disable-line -- intentional mount-only effect
+    // Bare disable (no rule name, no "--" description): react-scripts' bundled ESLint v6
+    // can't parse the "-- description" syntax, and the root ESLint config doesn't load the
+    // react-hooks plugin, so naming react-hooks/exhaustive-deps explicitly errors under one
+    // or the other. A blank eslint-disable-line is the only form both configs accept.
+  }, []) // eslint-disable-line
 
   return (
     <>
