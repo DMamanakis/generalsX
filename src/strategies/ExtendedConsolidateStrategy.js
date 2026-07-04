@@ -3,10 +3,12 @@ import { findPath, createDistanceMap } from '../utils/pathfinding'
 import { getLocationObject } from '../core/locationObject'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
 import { FOREIGN_POLICY } from '../intel/foreignPolicy'
+import { getDefenseTarget } from '../intel/cityIntel'
 
 /**
- * EXTENDED CONSOLIDATE strategy: pulls ALL scattered armies toward the general,
- * including small stacks that ConsolidateStrategy ignores.
+ * EXTENDED CONSOLIDATE strategy: pulls ALL scattered armies toward the general — or,
+ * absent a general threat, toward a city we own that's under threat (see
+ * cityIntel.getDefenseTarget) — including small stacks that ConsolidateStrategy ignores.
  *
  * Selects the army with the highest (armies × distance) score — prioritizing
  * the most valuable force that is most stuck far from home, rather than simply
@@ -32,13 +34,13 @@ export class ExtendedConsolidateStrategy extends BaseStrategy {
     if (foreignPolicy !== FOREIGN_POLICY.DEFEND) return false
     if (!game.myGeneralLocationIndex || !intel.myArmies.length) return false
 
-    const general = getLocationObject({locationIdx: game.myGeneralLocationIndex, game})
-    const generalDistMap = createDistanceMap({location: general, game})
+    const target = getLocationObject({locationIdx: getDefenseTarget(game, intel), game})
+    const targetDistMap = createDistanceMap({location: target, game})
 
     return intel.myArmies.some(a => {
       if (a.idx === game.myGeneralLocationIndex) return false
       if (a.armies < this.config.minArmySize) return false
-      const dist = generalDistMap[a.idx]
+      const dist = targetDistMap[a.idx]
       return typeof dist === 'number' && dist >= this.config.minDistanceToConsolidate
     })
   }
@@ -47,14 +49,14 @@ export class ExtendedConsolidateStrategy extends BaseStrategy {
     const queue = []
     if (!game.myGeneralLocationIndex || !intel.myArmies.length) return queue
 
-    const general = getLocationObject({locationIdx: game.myGeneralLocationIndex, game})
-    const generalDistMap = createDistanceMap({location: general, game})
+    const target = getLocationObject({locationIdx: getDefenseTarget(game, intel), game})
+    const targetDistMap = createDistanceMap({location: target, game})
 
     // Filter to armies that meet size and distance thresholds
     const candidates = intel.myArmies.filter(a => {
       if (a.idx === game.myGeneralLocationIndex) return false
       if (a.armies < this.config.minArmySize) return false
-      const dist = generalDistMap[a.idx]
+      const dist = targetDistMap[a.idx]
       return typeof dist === 'number' && dist >= this.config.minDistanceToConsolidate
     })
 
@@ -63,12 +65,12 @@ export class ExtendedConsolidateStrategy extends BaseStrategy {
     // Pick the army with the highest armies × distance score —
     // the most valuable force stuck farthest from home
     const source = candidates.reduce((best, army) => {
-      const bestScore = (generalDistMap[best.idx] || 0) * best.armies
-      const armyScore = (generalDistMap[army.idx] || 0) * army.armies
+      const bestScore = (targetDistMap[best.idx] || 0) * best.armies
+      const armyScore = (targetDistMap[army.idx] || 0) * army.armies
       return armyScore > bestScore ? army : best
     }, candidates[0])
 
-    const path = findPath({location: source, targetLocation: general, game})
+    const path = findPath({location: source, targetLocation: target, game})
     if (path.length <= 1) return queue
 
     for (let i = path.length - 1; i > 0; i--) {

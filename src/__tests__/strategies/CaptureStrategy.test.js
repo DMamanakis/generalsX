@@ -2,6 +2,7 @@ import { CaptureStrategy } from '../../strategies/CaptureStrategy'
 import { FOREIGN_POLICY } from '../../intel/foreignPolicy'
 import { gatherIntel } from '../../intel/intelGathering'
 import { initializeGameState } from '../../testUtils/testHelper'
+import { buildGameMap } from '../../core/gameMap'
 import * as attackQueueUtils from '../../utils/attackQueue'
 
 describe('CaptureStrategy', () => {
@@ -131,6 +132,43 @@ describe('CaptureStrategy', () => {
       // Should generate moves toward city 24 (the affordable one), not 20
       expect(moves.length).toBeGreaterThan(0)
       expect(moves[moves.length - 1].targetIndex).toBe(24)
+    })
+  })
+
+  describe('fog persistence and multi-army selection', () => {
+    it('still targets a city that is only in knownCities, not the currently-visible cities list', () => {
+      const strategy = new CaptureStrategy()
+      const game = initializeGameState('empty', 'allArmiesOnGeneral')
+      game.cities = [] // not currently visible (fogged)
+      game.knownCities = [24] // scouted previously
+      game.armies[24] = 5
+      const intel = gatherIntel(game)
+      expect(strategy.evaluate(game, intel, FOREIGN_POLICY.EXPAND)).toBe(true)
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(24)
+    })
+
+    it('falls back to a reachable smaller army when the largest army is walled off', () => {
+      const strategy = new CaptureStrategy()
+      const game = initializeGameState('empty', 'twoLargeArmies')
+      // Wall the general (idx 6, 15 armies) in on all four sides — it can reach nothing.
+      game.terrain[1] = -2
+      game.terrain[5] = -2
+      game.terrain[7] = -2
+      game.terrain[11] = -2
+      buildGameMap(game)
+
+      game.cities = [20]
+      game.knownCities = [20]
+      game.armies[20] = 5
+
+      const intel = gatherIntel(game)
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      // The path's source (last element, since paths are queued target-first) must be
+      // the reachable second-tier army (idx 10), not the walled-in general (idx 6).
+      expect(moves[0].attackerIndex).toBe(10)
     })
   })
 })

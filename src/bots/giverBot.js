@@ -2,6 +2,7 @@ import { BotFramework } from './botFramework'
 import { DefendStrategy } from '../strategies/DefendStrategy'
 import { ReinforceTeammateStrategy } from '../strategies/ReinforceTeammateStrategy'
 import { CaptureForTeammateStrategy } from '../strategies/CaptureForTeammateStrategy'
+import { CaptureStrategy } from '../strategies/CaptureStrategy'
 import { ExpandStrategy } from '../strategies/ExpandStrategy'
 import { ExploreStrategy } from '../strategies/ExploreStrategy'
 
@@ -16,10 +17,13 @@ import { ExploreStrategy } from '../strategies/ExploreStrategy'
  *   1. DefendStrategy           — protect our own general first; a dead giver helps nobody
  *   2. ReinforceTeammateStrategy — march our largest army to the teammate's general
  *                                   (armies transfer to them on contact with their tile)
- *   3. CaptureForTeammateStrategy — grab empty tiles adjacent to teammate territory and
- *                                    push armies onto their tile (coordinate expansions)
- *   4. ExpandStrategy            — grow our own tile count so we always have armies to give
- *   5. ExploreStrategy           — reveal the map as a last resort
+ *   3. CaptureForTeammateStrategy — grab empty tiles (including affordable known cities)
+ *                                    adjacent to teammate territory and push armies onto
+ *                                    their tile (coordinate expansions)
+ *   4. CaptureStrategy           — grab our own affordable cities; a city's ongoing army
+ *                                   production feeds directly into what we can give away
+ *   5. ExpandStrategy            — grow our own tile count so we always have armies to give
+ *   6. ExploreStrategy           — reveal the map as a last resort
  *
  * Config choices:
  *   - ReinforceTeammateStrategy minArmyToShare: 6 — start sharing earlier than default
@@ -32,6 +36,7 @@ const giverBot = {
       new DefendStrategy(),
       new ReinforceTeammateStrategy({ minArmyToShare: 6 }),
       new CaptureForTeammateStrategy({ minArmyToCapture: 3 }),
+      new CaptureStrategy(),
       new ExpandStrategy({ minArmySize: 3 }),
       new ExploreStrategy(),
     ])

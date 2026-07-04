@@ -155,7 +155,7 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 **Strategy stack (highest priority first):**
 
 1. `MdkStrategy` — beelines to the nearest known enemy general
-2. `CaptureStrategy` — grabs affordable neutral cities along the way
+2. `CaptureStrategy` — grabs the cheapest affordable city, using whichever top army can best reach it; targets survive fog (scouted-but-fogged cities stay candidates)
 3. `ExpandStrategy` — creeps into adjacent empty tiles
 4. `ExploreStrategy` — pushes into unexplored fog when nothing else applies
 
@@ -169,9 +169,9 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 **Strategy stack:**
 
-1. `DefendStrategy` — pulls armies home when threatened
+1. `DefendStrategy` — pulls armies home when threatened; defends a city under attack too if the general itself isn't threatened
 2. `MdkStrategy`
-3. `CaptureStrategy` *(cityArmyBuffer: 3 — stricter than default)*
+3. `CaptureStrategy` *(cityArmyBuffer: 2 — a bit more selective than default, but not so conservative it never clears a typical garrison)*
 4. `ExpandStrategy`
 5. `ExploreStrategy`
 
@@ -187,7 +187,8 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 1. `ExploreStrategy` — always moving toward unexplored territory
 2. `ExpandStrategy`
-3. `MdkStrategy`
+3. `CaptureStrategy` — grabs affordable cities it scouts along the way
+4. `MdkStrategy`
 
 **Best for:** Large maps, fog-heavy games, or when you want to play cautiously while gathering information.
 
@@ -199,9 +200,9 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 **Strategy stack:**
 
-1. `DefendStrategy`
-2. `ConsolidateStrategy` — pulls dispersed armies toward the general
-3. `CaptureStrategy` *(cityArmyBuffer: 5 — only takes very cheap cities)*
+1. `DefendStrategy` — defends a threatened owned city too, not just the general
+2. `ConsolidateStrategy` — pulls dispersed armies toward the general, or a threatened city if that's the bigger concern
+3. `CaptureStrategy` *(cityArmyBuffer: 3 — cautious about cities, but still able to build up forces from them)*
 4. `ExpandStrategy` *(minArmySize: 8 — only creeps with big stacks)*
 5. `MdkStrategy` — will eventually hunt if the game goes long
 
@@ -215,11 +216,12 @@ All bots share the same interface (`init(game)` + `move()`) and run on the same 
 
 **Strategy stack:**
 
-1. `DefendStrategy` — dead givers help nobody
+1. `DefendStrategy` — dead givers help nobody; defends a threatened owned city too
 2. `ReinforceTeammateStrategy` *(minArmyToShare: 6)* — marches your largest army to your teammate's general to hand off troops
-3. `CaptureForTeammateStrategy` *(minArmyToCapture: 3)* — grabs neutral tiles adjacent to teammate territory and pushes armies onto their tile
-4. `ExpandStrategy` *(minArmySize: 3)* — keeps growing so there are always armies to give
-5. `ExploreStrategy`
+3. `CaptureForTeammateStrategy` *(minArmyToCapture: 3)* — grabs neutral tiles (including affordable known cities) adjacent to teammate territory and pushes armies onto their tile
+4. `CaptureStrategy` — grabs our own affordable cities; the ongoing army production feeds directly into what we can give away
+5. `ExpandStrategy` *(minArmySize: 3)* — keeps growing so there are always armies to give
+6. `ExploreStrategy`
 
 **Best for:** Team games only. Pair with any aggressive bot as your partner. See [Team Play](#team-play).
 
@@ -428,11 +430,12 @@ src/
 ├── core/
 │   └── locationObject.js   # Per-tile LocationObject constructor
 ├── intel/
+│   ├── cityIntel.js        # Fog-persistent city targeting + defense rally-point selection
 │   ├── foreignPolicy.js    # EXPLORE → EXPAND → MDK → DEFEND decision
 │   ├── intelGathering.js   # Builds intel object each turn (myTopArmies, threats, etc.)
 │   ├── opponentAnalysis.js # Ranks opponents by vulnerability
 │   ├── teamIntel.js        # Finds teammates and their adjacent tiles
-│   └── threatDetection.js  # Detects enemy armies near our general
+│   └── threatDetection.js  # Detects enemy armies near our general or a city we own
 ├── strategies/             # All strategy implementations
 │   ├── BaseStrategy.js
 │   ├── CaptureForTeammateStrategy.js

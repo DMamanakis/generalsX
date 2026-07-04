@@ -5,11 +5,33 @@ import { getTeammateInfo, getEmptyTilesAdjacentToTeammate } from '../intel/teamI
 import { findNeighbors } from '../utils/neighbors'
 
 /**
- * CAPTURE FOR TEAMMATE strategy: find empty tiles that border the teammate's territory,
- * capture them, and then immediately push one step onto an adjacent teammate tile.
+ * Filter adjacent-to-teammate candidates for affordability. A plain empty tile always
+ * qualifies; a known city among the candidates only qualifies if the source army can
+ * clear its garrison by the configured buffer — otherwise we'd path onto an unaffordable
+ * city and fail via the framework's generic wouldLose safety net instead of this being
+ * an intentional decision either way.
+ * @param {Array} candidates - location objects from getEmptyTilesAdjacentToTeammate
+ * @param {object} source - the army location object attempting the capture
+ * @param {object} game
+ * @param {number} buffer - cityArmyBuffer
+ * @returns {Array}
+ */
+function filterAffordable(candidates, source, game, buffer) {
+  return candidates.filter(c => {
+    if (!game.knownCities.includes(c.idx)) return true
+    return source.armies > (game.armies[c.idx] || 0) + buffer
+  })
+}
+
+/**
+ * CAPTURE FOR TEAMMATE strategy: find empty tiles (including affordable known cities)
+ * that border the teammate's territory, capture them, and then immediately push one
+ * step onto an adjacent teammate tile.
  *
  * Mechanics:
  *   1. Identify empty tiles that sit directly beside at least one teammate-owned tile.
+ *      A known city among them is only a candidate if it clears cityArmyBuffer — capturing
+ *      one next to a teammate hands them an ongoing army-production tile, not just a tile.
  *   2. Path our best army to the nearest such tile.
  *   3. Append one final HANDOFF move from that captured tile onto the neighboring teammate
  *      tile — armies on a teammate tile transfer to the teammate's control.
@@ -21,27 +43,32 @@ import { findNeighbors } from '../utils/neighbors'
  *
  * Config options:
  *   minArmyToCapture {number} - Minimum army size to attempt this capture run (default: 4).
+ *   cityArmyBuffer {number} - Required margin over a candidate city's garrison (default: 1).
  */
 export class CaptureForTeammateStrategy extends BaseStrategy {
   constructor(config = {}) {
-    super({ minArmyToCapture: 4, ...config })
+    super({ minArmyToCapture: 4, cityArmyBuffer: 1, ...config })
   }
 
   evaluate(game, intel, foreignPolicy) { // eslint-disable-line no-unused-vars
     if (!getTeammateInfo(game)) return false
     if (!intel.myTopArmies.length) return false
     if (intel.myTopArmies[0].armies < this.config.minArmyToCapture) return false
-    return getEmptyTilesAdjacentToTeammate(game).length > 0
+    const candidates = filterAffordable(
+      getEmptyTilesAdjacentToTeammate(game), intel.myTopArmies[0], game, this.config.cityArmyBuffer,
+    )
+    return candidates.length > 0
   }
 
   generateMoves(game, intel) {
     const queue = []
     if (!intel.myTopArmies.length) return queue
 
-    const candidates = getEmptyTilesAdjacentToTeammate(game)
-    if (!candidates.length) return queue
-
     const source = intel.myTopArmies[0]
+    const candidates = filterAffordable(
+      getEmptyTilesAdjacentToTeammate(game), source, game, this.config.cityArmyBuffer,
+    )
+    if (!candidates.length) return queue
 
     // Pick the empty tile reachable from our source with the shortest path
     const distMap = createDistanceMap({location: source, game})

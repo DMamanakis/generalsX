@@ -82,4 +82,44 @@ describe('detectThreats', () => {
     const threats = detectThreats(game)
     expect(threats.some(t => t.type === 'ENEMY_GENERAL_NEARBY')).toBe(false)
   })
+
+  it('should flag an enemy adjacent to a city we own as a MEDIUM urgency threat', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    // City at idx 10 (owned by me, terrain === playerIndex 1) with an enemy at idx 11 (adjacent)
+    game.terrain[10] = 1
+    game.knownCities = [10]
+    game.terrain[11] = 0
+    game.armies[11] = 5
+    buildGameMap(game)
+
+    const threats = detectThreats(game)
+    const threat = threats.find(t => t.type === 'ADJACENT_TO_CITY')
+    expect(threat).toBeDefined()
+    expect(threat.urgency).toBe('MEDIUM')
+    expect(threat.cityIdx).toBe(10)
+  })
+
+  it('should not flag an adjacent teammate near an owned city as a threat', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.team = 1
+    game.teams = [1, 1]
+    game.terrain[10] = 1
+    game.knownCities = [10]
+    game.terrain[11] = 0 // player 0 is our teammate
+    game.armies[11] = 5
+    buildGameMap(game)
+
+    const threats = detectThreats(game)
+    expect(threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(false)
+  })
+
+  it('should not flag a city threat when we own no cities', () => {
+    const game = initializeGameState('empty', 'allArmiesOnGeneral')
+    game.terrain[11] = 0
+    game.armies[11] = 5
+    buildGameMap(game)
+
+    const threats = detectThreats(game)
+    expect(threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(false)
+  })
 })

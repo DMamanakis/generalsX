@@ -10,14 +10,15 @@ import { ExploreStrategy } from '../strategies/ExploreStrategy'
  * Strategies (priority order): Defend > Mdk > Capture > Expand > Explore
  *
  * Config choices:
- *   - CaptureStrategy cityArmyBuffer:3 — selective about cities, only takes clearly affordable ones
+ *   - CaptureStrategy cityArmyBuffer:2 — a bit more selective about cities than the
+ *     default (1), but not so conservative that it never clears typical 40-50 garrisons
  */
 const middleBot = {
   init(game) {
     this._framework = new BotFramework([
       new DefendStrategy(),
       new MdkStrategy(),
-      new CaptureStrategy({ cityArmyBuffer: 3 }),
+      new CaptureStrategy({ cityArmyBuffer: 2 }),
       new ExpandStrategy(),
       new ExploreStrategy(),
     ])

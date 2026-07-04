@@ -7,6 +7,68 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.8.0] - 2026-07-03
+
+Every bot preset effectively avoided cities: `CaptureStrategy` only saw currently-visible
+cities (never fog-persisted ones), only ever tried the single largest army as a source, two
+presets omitted it entirely, and no other strategy had any city awareness at all. Cities are
+one of the strongest force multipliers in the game (an owned city produces army like a second
+general), so this closes that gap across Capture, Defend, Consolidate, ExtendedConsolidate,
+CaptureForTeammate, and (indirectly) Mdk.
+
+### Added
+
+- **`src/intel/cityIntel.js`** — new shared city-awareness helpers: `getCapturableCities`
+  (known cities not owned by me/a teammate, cheapest-first, using `game.knownCities` so
+  fogged-but-scouted cities stay candidates), `getMyCities`, `findBestCityCapture` (best
+  affordable+reachable army/city pairing across *all* top armies, not just the largest), and
+  `getDefenseTarget` (general-level threats always win; falls back to a threatened owned city
+  only when the general itself isn't threatened).
+- **`ADJACENT_TO_CITY` threat type** in `src/intel/threatDetection.js` — an enemy adjacent to a
+  city we own is now a detected threat, alongside the existing general-adjacency and
+  general-proximity checks. Refactored the detector into three small per-threat-type functions
+  along the way (kept cognitive complexity under the enforced limit).
+
+### Changed
+
+- **`CaptureStrategy`** — rewritten to use `findBestCityCapture`. Same public config
+  (`cityArmyBuffer`, default 1), same move shape — but targets now survive fog, and any top
+  army (not just the largest) can be the source.
+- **`DefendStrategy`, `ConsolidateStrategy`, `ExtendedConsolidateStrategy`** — the hardcoded
+  rally point (`game.myGeneralLocationIndex`) is now `getDefenseTarget(game, intel)`. With no
+  city threat active (the vast majority of turns), this resolves to exactly the general, same
+  as before — fully backward compatible with every existing scenario.
+- **`CaptureForTeammateStrategy`** — candidates adjacent to teammate territory that turn out to
+  be known cities now require affordability (`cityArmyBuffer`, default 1) to qualify. Previously
+  a city could silently become the "closest empty tile" with no garrison check at all, usually
+  failing via the framework's generic `wouldLose` safety net instead of being an intentional
+  decision either way.
+- **`finderBot`, `giverBot`** — both were missing `CaptureStrategy` entirely and structurally
+  could never take a city. Added (`Explore > Expand > Capture > Mdk` for finder;
+  `... > CaptureForTeammate > Capture > Expand > Explore` for giver).
+- **`middleBot`, `turtleBot`** — `cityArmyBuffer` lowered (3→2, 5→3). Neutral garrisons are
+  typically ~40-50; the old values were conservative enough to make city-taking nearly
+  impossible rather than merely cautious.
+- `MdkStrategy` itself is unchanged — it never avoided cities (no `noCities` flag), it just
+  never targeted one mid-hunt. Making it detour mid-path would require `BotFramework` to let a
+  higher-priority strategy interrupt an in-progress queue (a much larger change); instead, the
+  existing `Mdk > Capture > ...` preset ordering means the upgraded `CaptureStrategy` now
+  reliably mops up cities on the turns between kill attempts.
+- `ExpandStrategy` is unchanged — verified its candidate list already structurally includes
+  neutral cities (they share `TERRAIN_EMPTY`), and `canCapture` already correctly filters them
+  out for small `minArmySize`-scale armies. That's correct behavior, not a gap.
+
+### Tests
+
+New `src/__tests__/intel/cityIntel.test.js` (17 tests, including a deliberately-walled-off-army
+scenario proving multi-army selection actually works, not just falls back to array order).
+Extended `CaptureStrategy`, `threatDetection`, `DefendStrategy`, `ConsolidateStrategy`,
+`ExtendedConsolidateStrategy`, `CaptureForTeammateStrategy`, `finderBot`, `giverBot`,
+`middleBot`, and `turtleBot` test suites — 409 tests total, all passing, coverage unchanged at
+~99.6%/96%/100%/100%, still well above the enforced 30/40/40/40 threshold.
+
+---
+
 ## [1.7.1] - 2026-07-02
 
 Fixes a race condition between `set_username` and `join_private` that surfaced immediately

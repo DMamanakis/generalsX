@@ -11,14 +11,15 @@ import { MdkStrategy } from '../strategies/MdkStrategy'
  *
  * Config choices:
  *   - ExpandStrategy minArmySize:8  — only spreads with sizeable armies, not every 2-unit stack
- *   - CaptureStrategy cityArmyBuffer:5 — only takes very cheap cities, won't overextend for them
+ *   - CaptureStrategy cityArmyBuffer:3 — cautious about cities, but not so conservative that
+ *     it never clears typical 40-50 garrisons — turtles need cities to build up forces too
  */
 const turtleBot = {
   init(game) {
     this._framework = new BotFramework([
       new DefendStrategy(),
       new ConsolidateStrategy(),
-      new CaptureStrategy({ cityArmyBuffer: 5 }),
+      new CaptureStrategy({ cityArmyBuffer: 3 }),
       new ExpandStrategy({ minArmySize: 8 }),
       new MdkStrategy(),
     ])

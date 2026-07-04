@@ -56,6 +56,10 @@ describe('CaptureForTeammateStrategy', () => {
       expect(strategy.config.minArmyToCapture).toBe(4)
     })
 
+    it('defaults to cityArmyBuffer: 1', () => {
+      expect(strategy.config.cityArmyBuffer).toBe(1)
+    })
+
     it('returns false in FFA (no teams)', () => {
       const game = initializeGameState('occupiedCorner', 'cornerArmies')
       const intel = gatherIntel(game)
@@ -189,6 +193,54 @@ describe('CaptureForTeammateStrategy', () => {
       const moves = strategy.generateMoves(game, intel)
       spy.mockRestore()
       expect(moves).toEqual([])
+    })
+  })
+
+  describe('city awareness', () => {
+    it('captures and hands off an affordable known city adjacent to teammate territory', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      // Eliminate every adjacent-to-teammate candidate except idx 8
+      ;[12, 17, 9, 22, 24].forEach(i => { game.terrain[i] = 0; game.armies[i] = 5 })
+      game.knownCities = [8]
+      game.armies[8] = 3 // affordable: 10 > 3 + 1 (default buffer)
+      buildGameMap(game)
+      const intel = gatherIntel(game)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      moves.forEach(m => expect(m.mode).toBe('HANDOFF'))
+      // The city itself (idx 8) should be the captured tile, not just some other candidate.
+      expect(moves.some(m => m.attackerIndex === 8 || m.targetIndex === 8)).toBe(true)
+      const lastMove = moves[moves.length - 1]
+      expect(game.locations[lastMove.targetIndex].isTeam).toBe(true)
+    })
+
+    it('skips an unaffordable known city, falling back to a plain empty tile', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      // Leave idx 8 (city, unaffordable) and idx 12 (plain empty) as the only candidates
+      ;[17, 9, 22, 24].forEach(i => { game.terrain[i] = 0; game.armies[i] = 5 })
+      game.knownCities = [8]
+      game.armies[8] = 50 // unaffordable: 10 > 50 + 1 is false
+      buildGameMap(game)
+      const intel = gatherIntel(game)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves.some(m => m.targetIndex === 8 || m.attackerIndex === 8)).toBe(false)
+    })
+
+    it('evaluate() returns false when the only adjacent-to-teammate candidate is an unaffordable city', () => {
+      const strategy = new CaptureForTeammateStrategy()
+      const game = makeTeamGame({ myArmies: 10 })
+      ;[12, 17, 9, 22, 24].forEach(i => { game.terrain[i] = 0; game.armies[i] = 5 })
+      game.knownCities = [8]
+      game.armies[8] = 50
+      buildGameMap(game)
+      const intel = gatherIntel(game)
+
+      expect(strategy.evaluate(game, intel, 'EXPLORE')).toBe(false)
     })
   })
 

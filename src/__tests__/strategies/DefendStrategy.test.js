@@ -100,4 +100,38 @@ describe('DefendStrategy', () => {
       expect(moves).toEqual([])
     })
   })
+
+  describe('city-aware rally point', () => {
+    it('should defend a threatened owned city instead of the general when the general itself is not threatened', () => {
+      const game = initializeGameState('empty', 'twoLargeArmies')
+      game.terrain[15] = 1 // a city we own
+      game.knownCities = [15]
+      game.terrain[16] = 0 // enemy adjacent to the city, not the general
+      game.armies[16] = 5
+      const intel = gatherIntel(game)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(true)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL' || t.type === 'ENEMY_GENERAL_NEARBY')).toBe(false)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(15)
+    })
+
+    it('should still defend the general when both the general and a city are threatened', () => {
+      const game = initializeGameState('empty', 'twoLargeArmies')
+      game.terrain[7] = 0 // enemy adjacent to the general
+      game.armies[7] = 5
+      game.terrain[15] = 1
+      game.knownCities = [15]
+      game.terrain[16] = 0
+      game.armies[16] = 5
+      const intel = gatherIntel(game)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL')).toBe(true)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(true)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(game.myGeneralLocationIndex)
+    })
+  })
 })

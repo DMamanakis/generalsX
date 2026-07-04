@@ -156,4 +156,38 @@ describe('ExtendedConsolidateStrategy', () => {
       expect(moves[0].attackerIndex).toBe(0)
     })
   })
+
+  describe('city-aware rally point', () => {
+    it('should consolidate toward a threatened owned city instead of the general when the general itself is not threatened', () => {
+      const strategy = new ExtendedConsolidateStrategy()
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      game.knownCities = [11] // an already-owned corner tile, now flagged as a city
+      game.terrain[16] = 0 // enemy adjacent to the city, not the general
+      game.armies[16] = 5
+      const intel = gatherIntel(game)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(true)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL' || t.type === 'ENEMY_GENERAL_NEARBY')).toBe(false)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(11)
+    })
+
+    it('should still consolidate toward the general when both the general and a city are threatened', () => {
+      const strategy = new ExtendedConsolidateStrategy()
+      const game = initializeGameState('occupiedCorner', 'cornerArmies')
+      game.terrain[7] = 0 // enemy adjacent to the general
+      game.armies[7] = 5
+      game.knownCities = [11]
+      game.terrain[16] = 0
+      game.armies[16] = 5
+      const intel = gatherIntel(game)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_GENERAL')).toBe(true)
+      expect(intel.threats.some(t => t.type === 'ADJACENT_TO_CITY')).toBe(true)
+
+      const moves = strategy.generateMoves(game, intel)
+      expect(moves.length).toBeGreaterThan(0)
+      expect(moves[moves.length - 1].targetIndex).toBe(game.myGeneralLocationIndex)
+    })
+  })
 })

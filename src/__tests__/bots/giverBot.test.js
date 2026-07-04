@@ -3,6 +3,7 @@ import { BotFramework } from '../../bots/botFramework'
 import { DefendStrategy } from '../../strategies/DefendStrategy'
 import { ReinforceTeammateStrategy } from '../../strategies/ReinforceTeammateStrategy'
 import { CaptureForTeammateStrategy } from '../../strategies/CaptureForTeammateStrategy'
+import { CaptureStrategy } from '../../strategies/CaptureStrategy'
 import { ExpandStrategy } from '../../strategies/ExpandStrategy'
 import { ExploreStrategy } from '../../strategies/ExploreStrategy'
 import { initializeGameState } from '../../testUtils/testHelper'
@@ -19,15 +20,16 @@ describe('giverBot', () => {
     expect(giverBot._framework).toBeInstanceOf(BotFramework)
   })
 
-  it('builds strategies in Defend > ReinforceTeammate > CaptureForTeammate > Expand > Explore order', () => {
+  it('builds strategies in Defend > ReinforceTeammate > CaptureForTeammate > Capture > Expand > Explore order', () => {
     giverBot.init(game)
     const strategies = giverBot._framework.strategies
-    expect(strategies.length).toBe(5)
+    expect(strategies.length).toBe(6)
     expect(strategies[0]).toBeInstanceOf(DefendStrategy)
     expect(strategies[1]).toBeInstanceOf(ReinforceTeammateStrategy)
     expect(strategies[2]).toBeInstanceOf(CaptureForTeammateStrategy)
-    expect(strategies[3]).toBeInstanceOf(ExpandStrategy)
-    expect(strategies[4]).toBeInstanceOf(ExploreStrategy)
+    expect(strategies[3]).toBeInstanceOf(CaptureStrategy)
+    expect(strategies[4]).toBeInstanceOf(ExpandStrategy)
+    expect(strategies[5]).toBeInstanceOf(ExploreStrategy)
   })
 
   it('configures ReinforceTeammateStrategy with minArmyToShare: 6', () => {
@@ -42,7 +44,7 @@ describe('giverBot', () => {
 
   it('configures ExpandStrategy with minArmySize: 3', () => {
     giverBot.init(game)
-    expect(giverBot._framework.strategies[3].config.minArmySize).toBe(3)
+    expect(giverBot._framework.strategies[4].config.minArmySize).toBe(3)
   })
 
   it('move() does nothing before the opening threshold', () => {

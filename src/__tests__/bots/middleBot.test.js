@@ -30,10 +30,10 @@ describe('middleBot', () => {
     expect(strategies[4]).toBeInstanceOf(ExploreStrategy)
   })
 
-  it('configures CaptureStrategy with cityArmyBuffer: 3', () => {
+  it('configures CaptureStrategy with cityArmyBuffer: 2', () => {
     middleBot.init(game)
     const captureStrategy = middleBot._framework.strategies[2]
-    expect(captureStrategy.config.cityArmyBuffer).toBe(3)
+    expect(captureStrategy.config.cityArmyBuffer).toBe(2)
   })
 
   it('move() does nothing before the opening threshold', () => {

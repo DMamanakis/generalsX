@@ -30,9 +30,9 @@ describe('turtleBot', () => {
     expect(strategies[4]).toBeInstanceOf(MdkStrategy)
   })
 
-  it('configures CaptureStrategy with cityArmyBuffer: 5', () => {
+  it('configures CaptureStrategy with cityArmyBuffer: 3', () => {
     turtleBot.init(game)
-    expect(turtleBot._framework.strategies[2].config.cityArmyBuffer).toBe(5)
+    expect(turtleBot._framework.strategies[2].config.cityArmyBuffer).toBe(3)
   })
 
   it('configures ExpandStrategy with minArmySize: 8', () => {

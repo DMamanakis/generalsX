@@ -2,6 +2,7 @@ import finderBot from '../../bots/finderBot'
 import { BotFramework } from '../../bots/botFramework'
 import { ExploreStrategy } from '../../strategies/ExploreStrategy'
 import { ExpandStrategy } from '../../strategies/ExpandStrategy'
+import { CaptureStrategy } from '../../strategies/CaptureStrategy'
 import { MdkStrategy } from '../../strategies/MdkStrategy'
 import { initializeGameState } from '../../testUtils/testHelper'
 
@@ -17,13 +18,14 @@ describe('finderBot', () => {
     expect(finderBot._framework).toBeInstanceOf(BotFramework)
   })
 
-  it('builds strategies in Explore > Expand > Mdk order', () => {
+  it('builds strategies in Explore > Expand > Capture > Mdk order', () => {
     finderBot.init(game)
     const strategies = finderBot._framework.strategies
-    expect(strategies.length).toBe(3)
+    expect(strategies.length).toBe(4)
     expect(strategies[0]).toBeInstanceOf(ExploreStrategy)
     expect(strategies[1]).toBeInstanceOf(ExpandStrategy)
-    expect(strategies[2]).toBeInstanceOf(MdkStrategy)
+    expect(strategies[2]).toBeInstanceOf(CaptureStrategy)
+    expect(strategies[3]).toBeInstanceOf(MdkStrategy)
   })
 
   it('move() does nothing before the opening threshold', () => {

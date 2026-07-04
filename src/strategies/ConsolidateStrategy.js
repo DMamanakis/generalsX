@@ -4,9 +4,11 @@ import { getLocationObject } from '../core/locationObject'
 import { makeAttackQueueObject, PRIORITY } from '../utils/attackQueue'
 import { createDistanceMap } from '../utils/pathfinding'
 import { FOREIGN_POLICY } from '../intel/foreignPolicy'
+import { getDefenseTarget } from '../intel/cityIntel'
 
 /**
- * CONSOLIDATE strategy: gather the largest outlying army back to the general.
+ * CONSOLIDATE strategy: gather the largest outlying army back to the general — or, absent
+ * a general threat, back to a city we own that's under threat (see cityIntel.getDefenseTarget).
  * Only fires during DEFEND — pulling armies home is a defensive maneuver and would
  * waste offensive momentum in any other phase.
  */
@@ -22,20 +24,20 @@ export class ConsolidateStrategy extends BaseStrategy {
     const queue = []
     if (!game.myGeneralLocationIndex) return queue
 
-    const general = getLocationObject({locationIdx: game.myGeneralLocationIndex, game})
+    const target = getLocationObject({locationIdx: getDefenseTarget(game, intel), game})
 
-    // Pick the army farthest from general by distance, excluding general itself
-    const generalDistMap = createDistanceMap({location: general, game})
+    // Pick the army farthest from the target by distance, excluding the general itself
+    const targetDistMap = createDistanceMap({location: target, game})
     const candidates = intel.myTopArmies.filter(a => a.idx !== game.myGeneralLocationIndex)
     if (!candidates.length) return queue
 
     const source = candidates.reduce((farthest, army) => {
-      const farthestDist = typeof generalDistMap[farthest.idx] === 'number' ? generalDistMap[farthest.idx] : 0
-      const armyDist = typeof generalDistMap[army.idx] === 'number' ? generalDistMap[army.idx] : 0
+      const farthestDist = typeof targetDistMap[farthest.idx] === 'number' ? targetDistMap[farthest.idx] : 0
+      const armyDist = typeof targetDistMap[army.idx] === 'number' ? targetDistMap[army.idx] : 0
       return armyDist > farthestDist ? army : farthest
     }, candidates[0])
 
-    const path = findPath({location: source, targetLocation: general, game})
+    const path = findPath({location: source, targetLocation: target, game})
     if (path.length <= 1) return queue
 
     for (let i = path.length - 1; i > 0; i--) {
