@@ -64,7 +64,7 @@ export default config
 ```
 
 > **Where do I get a bot user ID?**  
-> Log in at [bot.generals.io](http://bot.generals.io), create a bot account, and copy the user ID from your profile URL.
+> Open an **incognito/private window**, go straight to [bot.generals.io](http://bot.generals.io), and — **before interacting with the username prompt at all** — open DevTools and copy the auto-generated ID out of `localStorage`. This matters: an ID that's already had a human username set through the normal picker UI gets rejected when the app tries to register it as a bot (`error_set_username: "Bots still aren't allowed on the NA server"`). `BOT_NAME_*` must also start with the literal `[Bot]` prefix (no space, e.g. `[Bot]MyBot`) for the server to accept the registration as a bot rather than a human account.
 
 ---
 

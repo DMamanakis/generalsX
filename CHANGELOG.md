@@ -7,6 +7,155 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.1] - 2026-07-02
+
+Fixes a race condition between `set_username` and `join_private` that surfaced immediately
+after 1.7.0 landed: a fresh, never-used bot ID still got rejected with `gio_error: "You must
+choose a username to continue playing!"`, alongside an empty-string `error_set_username`
+response — the same empty-error pattern seen when live-probing the server with a genuinely
+new ID. `Join()` fired both events back-to-back with no gap; `join_private` was very likely
+evaluated before the server finished processing the username registration.
+
+### Fixed
+
+- `Join()` now waits 1 second after emitting `set_username` before emitting `join_private`,
+  giving the server time to actually register the username first.
+
+---
+
+## [1.7.0] - 2026-07-02
+
+Fixes the actual reason the bot never joined a live game after the socket connection was
+already working (1.6.0): the app never registered a username for its bot identity, and even
+when it tried, the account was already tagged as a human ("NA server") account.
+
+### Fixed
+
+- **`set_username` was never actually called.** `onConnect` had it commented out, and the
+  commented line referenced `config.BOT_USER_ID`/`config.BOT_NAME` — keys that don't even
+  exist (config is per-slot: `BOT_USER_ID_1`, `BOT_NAME_1`, etc.), so it wouldn't have worked
+  even uncommented. `Join(userID, username)` already receives the correct per-slot values, so
+  `set_username` now fires from there, immediately before `join_private`.
+- **No visibility into `set_username`/`join_private` rejections.** The server reports these
+  over dedicated events (`error_set_username`, `gio_error`) rather than emit acknowledgements
+  — confirmed by directly probing the live server with a throwaway script. Added listeners
+  for both, logged to the visible Game Log. This is what finally surfaced the real blocker:
+  `error_set_username: "Bots still aren't allowed on the NA server. We appreciate the effort
+  though!"` for an ID that had already picked a username through the normal website UI.
+- **Bot names now require the literal `[Bot]` prefix** (no space, e.g. `[Bot]MyBot`) —
+  confirmed against `skye2k2/generals-bot`, this project's direct predecessor (same
+  now-renamed `MurderBot`/`EnigmaBot` variant names), whose docs specify this exact format.
+  Updated `src/config.template.js` with the correct format and a comment explaining why a
+  bot's user ID must come from a **never-before-used** ID (an incognito window, read from
+  `localStorage` before ever touching the username picker) rather than one that's already
+  picked a username through the site's normal UI.
+- Updated the README's "Where do I get a bot user ID?" callout with the corrected, verified
+  steps (incognito window, read before interacting with the prompt, `[Bot]` name prefix).
+
+### Notes
+
+- generals.io still fully supports bot development — per the current Dev Center, bots just
+  aren't allowed on the standard human NA/EU servers; they run on the dedicated Bot Server
+  (`bot.generals.io`) or self-hosted custom games, which is exactly what this project already
+  targets. The blocker was account state (a human-claimed ID), not a platform-wide ban.
+
+---
+
+## [1.6.0] - 2026-07-02
+
+Fixes the bot never actually joining a real generals.io lobby — the socket never connected
+at all, and the app had zero way to tell you that.
+
+### Fixed
+
+- **The bot could never connect to `botws.generals.io`.** generals.io's server now speaks
+  Engine.IO protocol v4; this project pinned `socket.io-client: ^2`, which only speaks the
+  old protocol v3 and gets rejected outright (`{"code":5,"message":"Unsupported protocol
+  version"}`, HTTP 400 on the handshake). Every button click (Join, Force Start, Team) was
+  emitting into a socket that never connected — nothing ever reached the server, and the
+  actual bot.generals.io lobby never saw the bot. Upgraded to `socket.io-client: ^4.8.3`
+  (protocol v4). Verified directly against the live server with the upgraded client
+  (confirmed a real handshake + `connect` event, not just a build check).
+- **`src/pages/Play.js` used a default import** (`import io from 'socket.io-client'`).
+  Socket.io-client v4 dropped its default export in favor of a named `io` export — under
+  Babel's CommonJS interop, the old default import would have resolved to the entire
+  `{ io, Manager, Socket, ... }` exports object instead of the connect function, crashing
+  with `io is not a function` the moment the page loaded. Changed to
+  `import { io } from 'socket.io-client'`.
+- **The app had no way to surface a failed connection or server rejection.** Every log line
+  in `Join()`/`ForceStart()`/`Team()` was written unconditionally at click-time, regardless
+  of whether the emit ever reached the server — so a fully-broken socket looked identical to
+  a working one in the UI. Added `connect_error` and `error` socket listeners (logged to the
+  visible Game Log), and `onConnect`/`onDisconnect` now log the actual socket ID / disconnect
+  reason instead of doing nothing. This is what actually surfaced the root cause above
+  (`Socket connection failed: xhr poll error`) instead of it failing silently forever.
+
+### Notes
+
+- Local `config.js` (gitignored, not part of this commit) also had `BOT_VARIANT_1: 'mdkBot'`
+  — the bot map keys are PascalCase (`MdkBot`), so this exact string wouldn't match and would
+  silently fall back to a default bot. Worth checking your own `config.js` if you're seeing
+  "Unrecognized bot variant" in the Game Log.
+
+---
+
+## [1.5.0] - 2026-07-02
+
+Upgrades `react-scripts` from v3 to v5, fixing `npm start`/`npm run build` outright and
+removing two accumulated workarounds in the process.
+
+### Fixed
+
+- **`npm start`/`npm run build` failed to compile** — `node_modules/openai/index.js` uses `??`
+  (nullish coalescing). `react-scripts` v3's webpack config runs *every* `.js` file under
+  `node_modules` through a minimal Babel preset (`babel-preset-react-app/dependencies`) that
+  only rewrites ES-module syntax to CommonJS and has no ES2020+ syntax plugins, so parsing
+  failed with "Unexpected token" before any transform ran. This wasn't `openai`-specific —
+  any modern npm package shipping `??`/`?.` in its main entry would hit the same wall.
+  `react-scripts` v5 (webpack 5, modern Babel) supports this syntax natively.
+- **`NODE_OPTIONS=--openssl-legacy-provider` is no longer needed.** That flag was added in a
+  prior fix to work around webpack 4's MD4-hashing crash on Node 17+'s OpenSSL 3. webpack 5
+  doesn't hit this, so it's removed from the `start`/`build` scripts — confirmed via a clean
+  `npm run build` and dev-server run with the flag absent.
+- **A hidden `ajv` peer-dependency conflict**, surfaced by the upgrade itself: `ajv-keywords`
+  (pulled in by `schema-utils`/`terser-webpack-plugin`, part of webpack 5's toolchain) declares
+  `ajv@^8.8.2` as a **peer** dependency. This repo already installs with `--legacy-peer-deps`
+  (needed for an unrelated `grommet`/`styled-components@4` conflict), and that flag disables
+  *all* peer-dependency resolution — so npm silently hoisted an incompatible `ajv@6.15.0`
+  instead of nesting a compatible `ajv@8`, and the build crashed with
+  `Cannot find module 'ajv/dist/compile/codegen'`. Installing with `--force` instead resolves
+  peer dependencies correctly (nests `ajv@8.20.0` where needed) while still tolerating the
+  known grommet/styled-components mismatch — `--legacy-peer-deps` should be considered
+  deprecated for this repo's installs going forward in favor of `--force`.
+
+### Changed
+
+- `package.json` — `react-scripts: ^3` → `^5.0.1`; `start`/`build` scripts no longer set
+  `NODE_OPTIONS`.
+- `package-lock.json` — regenerated (983 packages net removed vs. the v3 tree; react-scripts
+  v5's dependency footprint is meaningfully leaner).
+
+### Verified
+
+- `npm run build` produces real, deployable output in `build/` (checked file sizes and
+  bundle content).
+- `npm start` serves a real webpack 5 bundle (`HTTP 200`, modern IIFE bootstrap format)
+  without the OpenSSL flag.
+- `npm run lint` — 0 errors, same 35 pre-existing warnings as before the upgrade.
+- `CI=true npm run test:ci` — all 377 tests pass, coverage unchanged
+  (99.77%/96.61%/100%/100%).
+- react-scripts v5's bundled build-time ESLint now reads this project's own `.eslintrc.js`
+  (unlike v3, which used an isolated internal config/ESLint version — the exact mismatch that
+  caused the earlier `Play.js` `-- comment` syntax bug). Every warning the v5 build reported
+  matched `npm run lint`'s existing, already-accepted warning list exactly — no new findings.
+
+### Notes
+
+- No React version change (`^16` retained, `ReactDOM.render` untouched) — this was purely a
+  build-tooling upgrade.
+
+---
+
 ## [1.4.0] - 2026-07-02
 
 Renames the `EnigmaBot` preset to `MiddleBot` (same bot, same strategy stack — Defend > Mdk > Capture > Expand > Explore — just a clearer name). Every reference across code, tests, and docs was updated; no behavior changed.

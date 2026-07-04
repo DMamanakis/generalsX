@@ -61,8 +61,14 @@ export function Join(userID, username) {
   gameLog = `Connected to lobby: ${config.GAME_ID}`
   const logEl = document.getElementById('log')
   if (logEl) logEl.innerHTML = gameLog
-  addGameLog(`Joined custom game at http://bot.generals.io/games/${encodeURIComponent(config.GAME_ID)}`)
-  socket.emit('join_private', config.GAME_ID, userID)
+  socket.emit('set_username', userID, username)
+  // The server processes set_username asynchronously — firing join_private immediately
+  // after can race ahead of that and get rejected with "You must choose a username to
+  // continue playing!" even though the username registration is actually in flight.
+  setTimeout(() => {
+    addGameLog(`Joined custom game at http://bot.generals.io/games/${encodeURIComponent(config.GAME_ID)}`)
+    socket.emit('join_private', config.GAME_ID, userID)
+  }, 1000)
 }
 
 export function Quit() {
@@ -101,6 +107,10 @@ export function FetchMapData() {
 export function InitializeSocket(externalSocket) {
   socket = externalSocket
   socket.on('connect', onConnect)
+  socket.on('connect_error', onConnectError)
+  socket.on('error', onServerError)
+  socket.on('error_set_username', onSetUsernameError)
+  socket.on('gio_error', onGioError)
   socket.on('game_start', onStart)
   socket.on('game_update', onUpdate)
   socket.on('game_lost', onLose)
@@ -109,11 +119,27 @@ export function InitializeSocket(externalSocket) {
 }
 
 function onConnect() {
-  // socket.emit('set_username', config.BOT_USER_ID, config.BOT_NAME)
+  addGameLog(`Socket connected (id: ${socket.id})`)
 }
 
-function onDisconnect() {
-  addGameLog('Game disconnected.')
+function onConnectError(err) {
+  addGameLog(`Socket connection failed: ${err?.message || err}`)
+}
+
+function onServerError(err) {
+  addGameLog(`Server error: ${JSON.stringify(err)}`)
+}
+
+function onSetUsernameError(message) {
+  addGameLog(`set_username rejected: ${message}`)
+}
+
+function onGioError(message) {
+  addGameLog(`Server rejected the request: ${message}`)
+}
+
+function onDisconnect(reason) {
+  addGameLog(`Game disconnected: ${reason}`)
 }
 
 export function onStart(startData) {
